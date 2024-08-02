@@ -44,6 +44,10 @@ const FetalWatchSchema = new Schema({
         numberOfFetuses: Number,
         chorionicityAndAmnionicity: String
     },
+    aiResults: [{
+        type: Schema.Types.ObjectId,
+        ref: 'AIResult' // Reference to an AIResult schema
+    }],
     createdAt: {
         type: Date,
         default: Date.now

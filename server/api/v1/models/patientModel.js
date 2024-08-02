@@ -29,7 +29,7 @@ const PatientSchema = new Schema({
     },
     emergencyContact: {
         name: { type: String, required: true },
-        contactInformation: { type: String, required: true }
+        phone: { type: String, required: true }
     },
     medicalHistory: {
         chronicIllnesses: [String],
