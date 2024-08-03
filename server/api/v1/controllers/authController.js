@@ -5,7 +5,7 @@ import generateToken from "../utils/generateToken.js"
 export const signUp = async (req, res) => {
     const { firstName, lastName, email, password, role } = req.body;
     try {
-        const userExists = await User.findone({ email });
+        const userExists = await User.findOne({ email });
         if (userExists)
             return res
                 .status(400)
@@ -31,10 +31,10 @@ export const signUp = async (req, res) => {
 };
 
 //user authentication handler
-export const login = async (req, res) => {
+export const signIn = async (req, res) => {
     const { email, password } = req.body;
     try {
-        const user = await User.findone({ email }).exec();
+        const user = await User.findOne({ email }).exec();
         if (!user) return res.status(401).json({
             status: "bad request",
             message: "invalid email"
