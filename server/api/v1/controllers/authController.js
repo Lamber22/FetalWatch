@@ -54,3 +54,17 @@ export const login = async (req, res) => {
         res.status(500).json({ status: "failed", errorMessage: error.message });
     }
 };
+
+// user signout handler
+export const signoutUser = async (req, res) => {
+    try {
+        res.clearCookie("token");
+        res
+        .status(200)
+        .json({ status: "success", message: "User signed out successfully" });
+    } catch (error) {
+        res
+        .status(500)
+        .json({ error: "Server error", errorMessage: error.message });
+    }
+};
