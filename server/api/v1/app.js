@@ -3,6 +3,7 @@ import dbClient from "./config/db.js";
 import authRouter from "./routes/authRoute.js";
 
 const app = express();
+
 app.use(express.json());
 
 app.get("/", (req, res) => {
