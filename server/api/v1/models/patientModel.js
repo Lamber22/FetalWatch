@@ -3,9 +3,6 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const PatientSchema = new Schema({
-    uniqueIdentifier: {
-        type: String, required: true, unique: true
-    },
     firstName: {
         type: String, required: true
     },
