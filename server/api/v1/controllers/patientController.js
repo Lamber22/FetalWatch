@@ -1,4 +1,4 @@
-import Patient from '../models/Patient';
+import Patient from '../models/patientModel.js';
 import { validationResult } from 'express-validator';
 
 // Create a new patient
@@ -49,7 +49,7 @@ export const getPatients = async (req, res) => {
 // Get a specific patient
 export const getPatientById = async (req, res) => {
     try {
-        const patient = await Patient.findById(req.params.id);
+        const patient = await Patient.findById(req.params.patientId);
         if (!patient) {
             return res.status(404).json({ message: 'Patient not found' });
         }
@@ -62,31 +62,12 @@ export const getPatientById = async (req, res) => {
 // Update a patient
 export const updatePatient = async (req, res) => {
     try {
-        // Validate incoming request
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        // Validate required fields
         const {
             firstName, lastName, dateOfBirth, age, gender,
             address, contactInformation, emergencyContact, medicalHistory
         } = req.body;
 
-        if (!firstName ||
-            !lastName ||
-            !dateOfBirth ||
-            !age ||
-            !gender ||
-            !address ||
-            !contactInformation ||
-            !emergencyContact ||
-            !medicalHistory) {
-            return res.status(400).json({ message: 'Missing required fields' });
-        }
-
-        const patient = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const patient = await Patient.findByIdAndUpdate(req.params.patientId, req.body, { new: true });
         if (!patient) {
             return res.status(404).json({ message: 'Patient not found' });
         }
@@ -99,7 +80,7 @@ export const updatePatient = async (req, res) => {
 // Delete a patient
 export const deletePatient = async (req, res) => {
     try {
-        const patient = await Patient.findByIdAndDelete(req.params.id);
+        const patient = await Patient.findByIdAndDelete(req.params.patientId);
         if (!patient) {
             return res.status(404).json({ message: 'Patient not found' });
         }

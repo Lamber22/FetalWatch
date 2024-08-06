@@ -2,6 +2,7 @@ import express from "express";
 import dbClient from "./config/db.js";
 import authRouter from "./routes/authRoute.js";
 import userRouter from "./routes/userRoute.js";
+import patientRouter from "./routes/patientRoute.js";
 
 const app = express();
 
@@ -12,5 +13,6 @@ app.get("/", (req, res) => {
 });
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/patients", patientRouter);
 
 export default app;
