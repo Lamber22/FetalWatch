@@ -1,19 +1,70 @@
+import mongoose from 'mongoose';
 import Pregnancy from '../models/pregnancyModel.js';
+import Patient from '../models/patientModel.js';
+
+// Create a new pregnancy
+const validateRequiredFields = ({ patientId, gestationalAge, expectedDeliveryDate }) => {
+    if (!patientId || !gestationalAge || !expectedDeliveryDate) {
+        return "Missing required fields: patientId, gestationalAge, or expectedDeliveryDate";
+    }
+    return null;
+};
+
+const validateDataTypes = ({ gestationalAge, expectedDeliveryDate, prenatalCare, vitalSigns }) => {
+    if (typeof gestationalAge !== 'number' || isNaN(gestationalAge)) {
+        return "Gestational age must be a valid number";
+    }
+    const date = new Date(expectedDeliveryDate);
+    if (isNaN(date.getTime())) {
+        return "Expected delivery date must be a valid date";
+    }
+    if (prenatalCare) {
+        if (typeof prenatalCare.numberOfVisits !== 'number' || isNaN(prenatalCare.numberOfVisits)) {
+            return "Number of visits in prenatal care must be a valid number";
+        }
+        if (typeof prenatalCare.adherence !== 'boolean') {
+            return "Adherence in prenatal care must be a boolean";
+        }
+    }
+    if (vitalSigns) {
+        const { bloodPressure, temperature, pulse, respiratoryRate } = vitalSigns;
+        if (bloodPressure && typeof bloodPressure !== 'string') return "Blood pressure must be a string";
+        if (temperature && (typeof temperature !== 'number' || isNaN(temperature))) return "Temperature must be a valid number";
+        if (pulse && (typeof pulse !== 'number' || isNaN(pulse))) return "Pulse must be a valid number";
+        if (respiratoryRate && (typeof respiratoryRate !== 'number' || isNaN(respiratoryRate))) return "Respiratory rate must be a valid number";
+    }
+    return null;
+};
+
 
 // Create a new pregnancy
 export const createPregnancy = async (req, res) => {
+    const validationError = validateRequiredFields(req.body) || validateDataTypes(req.body);
+    if (validationError) {
+        return res.status(400).json({ status: "error", message: validationError });
+    }
+
     try {
+        // Create and save the new Pregnancy document
         const pregnancy = new Pregnancy(req.body);
         await pregnancy.save();
+
+        // Update the Patient document to include this new Pregnancy
+        await Patient.findByIdAndUpdate(
+            req.body.patientId,
+            { $push: { pregnancies: pregnancy._id } }
+        );
+
         res.status(201).json({
             status: "success",
-            message: "Pregnancy created successfully",
+            message: "Pregnancy created and patient updated successfully",
             data: pregnancy
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ status: "error", message: error.message });
     }
 };
+
 
 // Get all pregnancies
 export const getPregnancies = async (req, res) => {

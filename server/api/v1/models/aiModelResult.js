@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const AIResultSchema = new Schema({
     fetalWatchId: { type: Schema.Types.ObjectId, ref: 'FetalWatch', required: true },
-    resultType: String, // e.g., 'fetal_growth', 'anomaly_detection'
+    resultType: String, // e.g., 'fetal_growth', 'abnormality_detection'
     details: Object, // Detailed results from AI
     createdAt: { type: Date, default: Date.now }
 });

@@ -3,6 +3,7 @@ import dbClient from "./config/db.js";
 import authRouter from "./routes/authRoute.js";
 import userRouter from "./routes/userRoute.js";
 import patientRouter from "./routes/patientRoute.js";
+import pregancyRouter from "./routes/pregnancyRoute.js";
 
 const app = express();
 
@@ -14,5 +15,6 @@ app.get("/", (req, res) => {
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/patients", patientRouter);
+app.use("/api/v1/pregnancies", pregancyRouter);
 
 export default app;

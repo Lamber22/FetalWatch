@@ -45,6 +45,10 @@ const PatientSchema = new Schema({
         surgicalHistory: [String],
         currentMedications: [String]
     },
+    pregnancies: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Pregnancy'
+    }],
     createdAt: { type: Date, default: Date.now
     },
     updatedAt: { type: Date, default: Date.now
