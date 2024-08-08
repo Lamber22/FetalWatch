@@ -79,4 +79,3 @@ export const deleteFetal = async (req, res) => {
     }
 };
 
-module.exports = router;
