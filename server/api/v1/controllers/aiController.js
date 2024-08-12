@@ -19,6 +19,7 @@ export const newAiResult = async (req, res) => {
 export const getAiResults = async (req, res) => {
     try {
         const aiResults = await AIResult.find();
+        if (aiResults.length === 0) return res.json({ message: "No result available" });
         res.json({
             status: "success",
             message: " AI results retrieved successfully",
