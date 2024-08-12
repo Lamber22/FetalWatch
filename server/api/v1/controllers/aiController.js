@@ -1,4 +1,4 @@
-import AIResult from '../models/AIResult';
+import AIResult from '../models/aiModelResult.js';
 
 // Create a new AI result
 export const newAiResult = async (req, res) => {
