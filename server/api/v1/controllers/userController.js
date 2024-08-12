@@ -5,6 +5,7 @@ import User from "../models/userModel.js";
 export const getUsers = async (req, res) => {
     try {
         const users = await User.find();
+        if (users.length === 0) return res.json({ message: "No users Database empty" });
         res
         .status(200)
         .json({ status: "success", numUsers: users.length, data: users });
@@ -20,6 +21,7 @@ export const getUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
     try {
         const user = await User.findById(req.params.userId);
+        if (!user) return res.json({ message: "No user found" });
         res.json({ status: "success", message: "User found", data: user });
     } catch (error) {
         console.error(error);
@@ -64,7 +66,7 @@ export const getUsersByRole = async (req, res) => {
 
 // Update user
 export const updateUser = async (req, res) => {
-    const reqBody = req.body;
+    // const reqBody = req.body;
     const userId = req.params.userId;
 
     try {

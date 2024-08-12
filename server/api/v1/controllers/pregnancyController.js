@@ -70,6 +70,7 @@ export const createPregnancy = async (req, res) => {
 export const getPregnancies = async (req, res) => {
     try {
         const pregnancies = await Pregnancy.find().populate('patientId'); // Populate patient details
+        if (pregnancies.length === 0) return res.json({ message: "No pregnancy data found in Database" });
         res.status(200).json({
             status: "success",
             numPregnancies: pregnancies.length,

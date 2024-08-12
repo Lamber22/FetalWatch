@@ -40,7 +40,12 @@ export const createPatient = async (req, res) => {
 export const getPatients = async (req, res) => {
     try {
         const patients = await Patient.find();
-        res.status(200).json({ status: "success", numPatients: patients.length, data: patients });
+        if (patients.length === 0) return res.json({ message: "No patient found in Database" });
+        res.status(200).json({
+            status: "success",
+            numPatients: patients.length,
+            data: patients
+        });
     } catch (error) {
         res.status(500).json({status: "failed", error: error.message });
     }

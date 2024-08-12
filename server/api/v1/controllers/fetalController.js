@@ -19,6 +19,7 @@ export const createFetal = async (req, res) => {
 export const getFetals = async (req, res) => {
     try {
         const fetalWatches = await FetalWatch.find();
+        if (fetalWatches.length === 0) return res.json({ message: "No fetal data in Database"})
         res.json({
             status: "success",
             message: "all fetal data retrieved successfully",

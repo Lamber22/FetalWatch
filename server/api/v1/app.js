@@ -6,6 +6,7 @@ import patientRouter from "./routes/patientRoute.js";
 import pregancyRouter from "./routes/pregnancyRoute.js";
 import airouter from "./routes/aiRoute.js";
 import dataPointRouter from "./routes/dataPointRoute.js";
+import fetalRouter from "./routes/fetalRoute.js";
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.use("/api/v1/patients", patientRouter);
 app.use("/api/v1/pregnancies", pregancyRouter);
 app.use("/api/v1/aiResults", airouter);
 app.use("/api/v1/dataPoints", dataPointRouter);
+app.use("/api/v1/fetalwatch", fetalRouter);
 
 export default app;

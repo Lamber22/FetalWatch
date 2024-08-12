@@ -20,6 +20,7 @@ export const newDatapoint = async (req, res) => {
 export const getDataPoints = async (req, res) => {
     try {
         const dataPoints = await DataPoint.find();
+        if (dataPoints.length === 0) return res.json({ message: "No data found in Database" });
         res.json({
             status: "success",
             message: "Data  Retrieved successfully",
