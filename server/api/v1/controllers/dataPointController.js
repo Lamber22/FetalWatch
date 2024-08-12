@@ -6,9 +6,13 @@ export const newDatapoint = async (req, res) => {
     try {
         const dataPoint = new DataPoint(req.body);
         const savedDataPoint = await dataPoint.save();
-        res.status(201).json(savedDataPoint);
+        res.status(201).json({
+            status: "success",
+            message: "Data successfully created",
+            data: savedDataPoint
+        });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ status: "failed", error: error.message });
     }
 };
 
@@ -16,9 +20,14 @@ export const newDatapoint = async (req, res) => {
 export const getDataPoints = async (req, res) => {
     try {
         const dataPoints = await DataPoint.find();
-        res.json(dataPoints);
+        res.json({
+            status: "success",
+            message: "Data  Retrieved successfully",
+            numOfData: dataPoints.length,
+            data: dataPoints
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status: "failed", error: error.message });
     }
 };
 
@@ -29,9 +38,13 @@ export const getDataPointById = async (req, res) => {
         if (!dataPoint) {
         return res.status(404).json({ message: 'Data point not found' });
         }
-        res.json(dataPoint);
+        res.json({
+            status: "success",
+            message: "Data found",
+            data: dataPoint
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status: "failed", error: error.message });
     }
 };
 
@@ -42,9 +55,13 @@ export const updateDataPoint = async (req, res) => {
         if (!updatedDataPoint) {
         return res.status(404).json({ message: 'Data point not found' });
         }
-        res.json(updatedDataPoint);
+        res.json({
+            status: "success",
+            message: "Data updated successfully",
+            data: updatedDataPoint
+        });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ status: "failed", error: error.message });
     }
 };
 
@@ -55,8 +72,8 @@ export const deleteDataPoint = async (req, res) => {
         if (!deletedDataPoint) {
         return res.status(404).json({ message: 'Data point not found' });
         }
-        res.json({ message: 'Data point deleted successfully' });
+        res.json({ status: "success", message: 'Data point deleted successfully' });
     } catch (error) {
-        res.status(500).json({ status: "error", error: error.message });
+        res.status(500).json({ status: "failed", error: error.message });
     }
 };
