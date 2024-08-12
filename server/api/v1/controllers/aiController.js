@@ -77,7 +77,7 @@ export const deleteAiResult = async (req, res) => {
             message: 'AI result deleted successfully'
         });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ status: "failed", error: error.message });
     }
 };
 
