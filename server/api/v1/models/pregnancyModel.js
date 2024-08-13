@@ -11,13 +11,14 @@ const PregnancySchema = new Schema({
     },
     fetalMovement: Boolean,
     complications: [String],
-    ultrasoundFindings: [{
+    complications: [String],
+    fetalWatch: [{
         type: Schema.Types.ObjectId,
-        ref: 'Finding' // Reference to a Finding schema
+        ref: 'FetalWatch' // Reference to the FetalWatch schema
     }],
-    laboratoryResults: [{
+    labResults: [{
         type: Schema.Types.ObjectId,
-        ref: 'Result' // Reference to a Result schema
+        ref: 'LabResult' // Reference to the LabResult schema
     }],
     vitalSigns: {
         bloodPressure: String,

@@ -5,11 +5,12 @@ import userRouter from "./routes/userRoute.js";
 import patientRouter from "./routes/patientRoute.js";
 import pregancyRouter from "./routes/pregnancyRoute.js";
 import airouter from "./routes/aiRoute.js";
-import dataPointRouter from "./routes/dataPointRoute.js";
+import labResultRouter from "./routes/labResultRoute.js";
 import fetalRouter from "./routes/fetalRoute.js";
 
 const app = express();
 
+// Middleware for parsing JSON request bodies
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -20,7 +21,7 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/patients", patientRouter);
 app.use("/api/v1/pregnancies", pregancyRouter);
 app.use("/api/v1/aiResults", airouter);
-app.use("/api/v1/dataPoints", dataPointRouter);
+app.use("/api/v1/labResults", labResultRouter);
 app.use("/api/v1/fetalwatch", fetalRouter);
 
 export default app;

@@ -44,6 +44,10 @@ const FetalWatchSchema = new Schema({
         numberOfFetuses: Number,
         chorionicityAndAmnionicity: String
     },
+    image: {
+        type: String,
+        required: false // Optional: Only required if an image is part of the finding
+    },
     aiResults: [{
         type: Schema.Types.ObjectId,
         ref: 'AIResult' // Reference to an AIResult schema
