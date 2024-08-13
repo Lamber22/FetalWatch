@@ -45,6 +45,12 @@ export const createPregnancy = async (req, res) => {
     }
 
     try {
+        // Check if the patient exists
+        const patient = await Patient.findById(req.body.patientId);
+        if (!patient) {
+            return res.status(404).json({ status: "error", message: "Patient not found" });
+        }
+
         // Create and save the new Pregnancy document
         const pregnancy = new Pregnancy(req.body);
         await pregnancy.save();
@@ -64,6 +70,7 @@ export const createPregnancy = async (req, res) => {
         res.status(400).json({ status: "error", message: error.message });
     }
 };
+
 
 
 // Get all pregnancies

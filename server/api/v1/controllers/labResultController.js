@@ -1,35 +1,36 @@
 import LabResult from '../models/labResult.js';
-import Pregnancy from '../models/pregnancyModel.js';
+import FetalWatch from '../models/fetalWatch.js'; // Update import to FetalWatch
 
-// Create a new lab result and associate it with a pregnancy
+// Create a new lab result and associate it with a fetal watch
 export const createLabResult = async (req, res) => {
     try {
         const labResult = new LabResult(req.body);
         const savedLabResult = await labResult.save();
 
-        // Find the pregnancy and add the new lab result to the corresponding array
-        const pregnancy = await Pregnancy.findById(labResult.pregnancyId);
-        if (!pregnancy) {
-            return res.status(404).json({ message: 'Pregnancy not found' });
+        // Find the FetalWatch and add the new lab result to the corresponding array
+        const fetalWatch = await FetalWatch.findById(labResult.fetalWatchId); // Assuming labResult contains a fetalWatchId field
+        if (!fetalWatch) {
+            return res.status(404).json({ message: 'FetalWatch not found' });
         }
 
-        if (labResult.type === 'finding') {
-            pregnancy.ultrasoundFindings.push(savedLabResult._id);
-        } else if (labResult.type === 'result') {
-            pregnancy.laboratoryResults.push(savedLabResult._id);
-        }
+        // Ensure arrays are initialized
+        if (!fetalWatch.aiResults) fetalWatch.aiResults = [];
 
-        await pregnancy.save();
+        // Push the new lab result to the appropriate array
+        fetalWatch.aiResults.push(savedLabResult._id);
+
+        await fetalWatch.save();
 
         res.status(201).json({
             status: "success",
-            message: "Lab result successfully created and associated with pregnancy",
+            message: "Lab result successfully created and associated with FetalWatch",
             data: savedLabResult
         });
     } catch (error) {
         res.status(400).json({ status: "failed", error: error.message });
     }
 };
+
 
 // Get all lab results
 export const getLabResults = async (req, res) => {

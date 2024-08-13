@@ -2,7 +2,11 @@ import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
 const LabResultSchema = new Schema({
-    pregnancyId: { type: Schema.Types.ObjectId, ref: 'Pregnancy', required: true },
+    fetalWatchId: {
+        type: Schema.Types.ObjectId,
+        ref: 'FetalWatch',
+        required: true
+    },
     type: {
         type: String,
         required: true,
