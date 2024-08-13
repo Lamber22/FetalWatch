@@ -1,11 +1,42 @@
 import mongoose from 'mongoose';
-const Schema = mongoose.Schema;
 
-const AIResultSchema = new Schema({
-    fetalWatchId: { type: Schema.Types.ObjectId, ref: 'FetalWatch', required: true },
-    resultType: String, // e.g., 'fetal_growth', 'abnormality_detection'
-    details: Object, // Detailed results from AI
-    createdAt: { type: Date, default: Date.now }
+// Define the detailsSchema
+const detailsSchema = new mongoose.Schema({
+    anomaliesDetected: { type: [String], required: false },
+    fetalMeasurements: {
+        headCircumference: Number,
+        abdominalCircumference: Number,
+        femurLength: Number,
+    },
+    riskAssessment: {
+        riskLevel: { type: String, enum: ["low", "moderate", "high"] },
+        riskFactors: [String],
+    },
+    imageAnalysis: {
+        placentalLocation: String,
+        amnioticFluidVolume: Number,
+        fetalPosition: String,
+    },
+    predictiveInsights: {
+        estimatedDeliveryDate: Date,
+        growthRate: Number,
+        developmentalStage: String,
+    },
+    confidenceScores: {
+        anomalyDetection: Number,
+        measurementsAccuracy: Number,
+    },
+    recommendations: {
+        followUpActions: [String],
+        nextSteps: String,
+    },
+});
+
+// Define the AIResultSchema and integrate detailsSchema
+const AIResultSchema = new mongoose.Schema({
+    fetalWatchId: { type: mongoose.Schema.Types.ObjectId, ref: 'FetalWatch', required: true },
+    analysisDate: { type: Date, default: Date.now },
+    details: { type: detailsSchema, required: true },
 });
 
 const AIResult = mongoose.model('AIResult', AIResultSchema);
