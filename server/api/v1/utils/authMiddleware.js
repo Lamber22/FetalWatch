@@ -36,4 +36,4 @@ const jsonParserMiddleware = (req, res, next) => {
 };
 
 
-export { authMiddleware, checkRole, jsonParserMiddleware };
+export { authMiddleware, jsonParserMiddleware };
