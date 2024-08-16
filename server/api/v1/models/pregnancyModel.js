@@ -11,7 +11,6 @@ const PregnancySchema = new Schema({
     },
     fetalMovement: Boolean,
     complications: [String],
-    complications: [String],
     fetalWatch: [{
         type: Schema.Types.ObjectId,
         ref: 'FetalWatch' // Reference to the FetalWatch schema

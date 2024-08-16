@@ -13,11 +13,11 @@ const FetalWatchSchema = new Schema({
     fetalData: {
         fetalHeartbeat: Number,
         measurements: {
-        CRL: Number,
-        BPD: Number,
-        FL: Number,
-        HC: Number,
-        AC: Number
+        crownRumpLength: Number,
+        biparietalDiameter: Number,
+        femurLength: Number,
+        headCircumference: Number,
+        abdominalCircumference: Number
         },
         growthAndDevelopment: String,
         position: String

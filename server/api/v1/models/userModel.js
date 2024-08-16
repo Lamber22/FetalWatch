@@ -17,7 +17,7 @@ const UserSchema = new Schema({
         type: String, require: true
     },
     role: {
-        type: String, enum: ["admin", "healthProvider", "doctor", "midwife"],
+        type: String, enum: ["admin", "healthProvider", "doctor", "nurse", "midwife"],
         default: "healthProvider", require: true
     },
     createdAt: {
