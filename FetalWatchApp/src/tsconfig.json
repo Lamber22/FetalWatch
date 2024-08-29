@@ -1,0 +1,31 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "target": "esnext", // Allows for modern JavaScript features
+    "module": "esnext",
+    "jsx": "react-native", // Configures JSX support for React Native
+    "moduleResolution": "node", // Helps resolve modules correctly
+    "allowJs": true, // Allows JavaScript files to be included
+    "skipLibCheck": true, // Skips type checking of declaration files
+    "esModuleInterop": true, // Ensures compatibility with CommonJS modules
+    "forceConsistentCasingInFileNames": true, // Enforces consistent casing for imports
+    "noEmit": true, // Prevents emitting JavaScript files
+    "resolveJsonModule": true, // Allows importing JSON modules
+    "isolatedModules": true, // Improves compatibility with React Native
+    "baseUrl": ".", // Sets base URL for module resolution
+    "paths": {
+      "*": ["node_modules/*"] // Ensures node_modules are resolved correctly
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.config.js"
+  ]
+}
