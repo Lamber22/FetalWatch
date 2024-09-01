@@ -15,7 +15,7 @@ const app = express();
 // Middleware for parsing JSON request bodies
 app.use(express.json());
 
-app.get("/", (req, res) => {
+app.get("/api/v1/", (req, res) => {
     res.status(200).json({ message: "Hello from FetalWatch API" });
 });
 app.use(morgan("dev"));
