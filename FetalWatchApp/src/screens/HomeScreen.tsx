@@ -41,6 +41,14 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         setPatients(dummyPatients);
     }, []);
 
+    const handleAddNewPatient = () => {
+        navigation.navigate('AddPatient', {
+            onSubmit: (newPatient: Patient) => {
+                setPatients([...patients, newPatient]);
+            }
+        });
+    };
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>FetalWatch</Text>
@@ -49,11 +57,11 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                 <Text style={styles.header}>Manage Patients</Text>
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="search patient"
+                    placeholder="Search patient"
                     value={searchTerm}
                     onChangeText={setSearchTerm}
                 />
-                <TouchableOpacity style={styles.addButton}>
+                <TouchableOpacity style={styles.addButton} onPress={handleAddNewPatient}>
                     <Text style={styles.addButtonText}>Add new patient</Text>
                 </TouchableOpacity>
             </View>
@@ -73,7 +81,6 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                     </View>
                 )}
             />
-
             <View style={styles.analyticsContainer}>
                 <Text style={styles.analyticsText}>Total Patient: 500</Text>
                 <Text style={styles.analyticsText}>Active patients: 400</Text>
