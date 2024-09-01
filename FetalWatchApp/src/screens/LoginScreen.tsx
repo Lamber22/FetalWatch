@@ -1,37 +1,46 @@
-import React from 'react';
+// src/screens/LoginScreen.tsx
+import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { TextInput, Button, Text } from 'react-native-paper';
+import AuthForm from '../components/AuthForm';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-const LoginScreen = () => {
-    const [email, setEmail] = React.useState('');
-    const [password, setPassword] = React.useState('');
+type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
-    const handleLogin = () => {
-    // Login logic goes here
-    console.log('Logged in:', email);
+type Props = {
+    navigation: LoginScreenNavigationProp;
+};
+
+const LoginScreen: React.FC<Props> = ({ navigation }) => {
+    const [errorMessage, setErrorMessage] = useState('');
+
+    const handleLogin = async ({ email, password }: { email: string; password: string }) => {
+        // Simulate login for testing purposes
+        const testEmail = 'fetalwatch@gmail.com';
+        const testPassword = 'admin';
+
+        if (email === testEmail && password === testPassword) {
+            try {
+                // Simulate setting a token in AsyncStorage
+                await AsyncStorage.setItem('token', 'dummyTokenForTesting');
+                navigation.navigate('Home'); // Navigate to Home screen on successful login
+            } catch (err) {
+                setErrorMessage('Error storing token');
+            }
+        } else {
+            setErrorMessage('Invalid login credentials'); // Set error message for invalid credentials
+        }
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Welcome to FetalWatch</Text>
-            <TextInput
-                label="Email"
-                value={email}
-                onChangeText={text => setEmail(text)}
-                mode="outlined"
-                style={styles.input}
+            <AuthForm
+                headerText="Login to FetalWatch"
+                errorMessage={errorMessage}
+                onSubmit={handleLogin}
+                submitButtonText="Login"
             />
-            <TextInput
-                label="Password"
-                value={password}
-                onChangeText={text => setPassword(text)}
-                mode="outlined"
-                secureTextEntry
-                style={styles.input}
-            />
-            <Button mode="contained" onPress={handleLogin} style={styles.button}>
-                Login
-            </Button>
         </View>
     );
 };
@@ -40,19 +49,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
-        padding: 20,
-        backgroundColor: '#fff',
-    },
-    title: {
-        fontSize: 24,
-        marginBottom: 20,
-        textAlign: 'center',
-    },
-    input: {
-        marginBottom: 15,
-    },
-    button: {
-        marginTop: 10,
     },
 });
 

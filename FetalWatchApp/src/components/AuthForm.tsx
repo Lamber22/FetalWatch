@@ -7,11 +7,20 @@ interface AuthFormProps {
     errorMessage: string;
     onSubmit: (data: { email: string; password: string }) => void;
     submitButtonText: string;
+    defaultEmail?: string; // Add default email prop
+    defaultPassword?: string; // Add default password prop
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ headerText, errorMessage, onSubmit, submitButtonText }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+const AuthForm: React.FC<AuthFormProps> = ({
+    headerText,
+    errorMessage,
+    onSubmit,
+    submitButtonText,
+    defaultEmail = '',
+    defaultPassword = ''
+    }) => {
+    const [email, setEmail] = useState(defaultEmail);
+    const [password, setPassword] = useState(defaultPassword);
 
     return (
         <View style={styles.container}>
