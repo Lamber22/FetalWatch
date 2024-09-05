@@ -50,6 +50,9 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
     },
+    submitButtonText: {
+        backgroundColor: '#d368e4',
+    },
 });
 
 export default LoginScreen;

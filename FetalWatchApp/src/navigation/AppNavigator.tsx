@@ -7,6 +7,9 @@ import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import PatientScreen from '../screens/PatientScreen';
 import AddPatientScreen from '../components/AddPatientScreen';
+import PregnancyDetailsScreen from '../screens/PregnancyDetailsScreen';
+import AddPregnancyDetailsScreen from '../components/AddPregnancyDetailsScreen';
+
 
 export type RootStackParamList = {
     Login: undefined;
@@ -14,6 +17,8 @@ export type RootStackParamList = {
     Home: undefined;
     Patient: { id: string };
     AddPatient: { onSubmit: (newPatient: any) => void };
+    PregnancyDetails: { patient: any; pregnancy: any }; // Adjust the type as needed
+    AddPregnancyDetails: { patientId: string };
 };
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -29,6 +34,16 @@ const AppNavigator = () => {
                 name="AddPatient"
                 component={AddPatientScreen}
                 options={{ title: 'Add New Patient' }}
+            />
+            <Stack.Screen
+                name="PregnancyDetails"
+                component={PregnancyDetailsScreen}
+                options={{ title: 'Pregnancy Details' }}
+            />
+            <Stack.Screen
+                name="AddPregnancyDetails"
+                component={AddPregnancyDetailsScreen}
+                options={{ title: 'Add Pregnancy Details' }}
             />
         </Stack.Navigator>
         </NavigationContainer>

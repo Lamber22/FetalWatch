@@ -38,6 +38,9 @@ const AddPatientScreen = ({ navigation, route }: any) => {
     const [address, setAddress] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
+    const [educationLevel, setEducationLevel] = useState('');
+    const [occupation, setOccupation] = useState('');
+    const [income, setIncome] = useState('');
     const [emergencyName, setEmergencyName] = useState('');
     const [emergencyPhone, setEmergencyPhone] = useState('');
     const [chronicIllnesses, setChronicIllnesses] = useState('');
@@ -84,6 +87,7 @@ const AddPatientScreen = ({ navigation, route }: any) => {
                 phone,
                 email,
             },
+            occupation,
             emergencyContact: {
                 name: emergencyName,
                 phone: emergencyPhone,
@@ -108,7 +112,7 @@ const AddPatientScreen = ({ navigation, route }: any) => {
         };
 
         route.params.onSubmit(newPatient);
-        navigation.goBack();
+        navigation.navigate('PregnancyDetails', { patient: newPatient });
     };
 
     return (
@@ -177,6 +181,21 @@ const AddPatientScreen = ({ navigation, route }: any) => {
                 value={email}
                 onChange={setEmail}
                 keyboardType="email-address"
+            />
+            <FloatingLabelInput
+                label="educationLevel"
+                value={educationLevel}
+                onChange={setEducationLevel}
+            />
+            <FloatingLabelInput
+                label="occupation"
+                value={occupation}
+                onChange={setOccupation}
+            />
+            <FloatingLabelInput
+                label="income"
+                value={income}
+                onChange={setIncome}
             />
             <FloatingLabelInput
                 label="Emergency Contact Name"
