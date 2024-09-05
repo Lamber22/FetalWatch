@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const AddPregnancyDetailsScreen = ({ route, navigation }: any) => {
     const { patient } = route.params;
@@ -14,6 +15,7 @@ const AddPregnancyDetailsScreen = ({ route, navigation }: any) => {
     const [height, setHeight] = useState('');
     const [immunizationStatus, setImmunizationStatus] = useState('');
     const [consentForm, setConsentForm] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     const handleSubmit = () => {
         const newPregnancy = {
@@ -40,7 +42,15 @@ const AddPregnancyDetailsScreen = ({ route, navigation }: any) => {
         navigation.navigate('PatientDetails', {
             patient,
             newPregnancy: newPregnancy, // Pass the new pregnancy data back
-});
+        });
+    };
+
+    const onDateChange = (event: any, selectedDate?: Date) => {
+        setShowDatePicker(Platform.OS === 'ios');
+        if (selectedDate) {
+            const formattedDate = selectedDate.toISOString().split('T')[0];
+            setExpectedDeliveryDate(formattedDate);
+        }
     };
 
     return (
@@ -53,12 +63,19 @@ const AddPregnancyDetailsScreen = ({ route, navigation }: any) => {
                 onChangeText={setGestationalAge}
                 keyboardType="numeric"
             />
-            <TextInput
-                style={styles.input}
-                placeholder="Expected Delivery Date (YYYY-MM-DD)"
-                value={expectedDeliveryDate}
-                onChangeText={setExpectedDeliveryDate}
-            />
+            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
+                <Text style={styles.datePickerText}>
+                    Expected Delivery Date: {expectedDeliveryDate || 'Select a date'}
+                </Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+                <DateTimePicker
+                    value={new Date(expectedDeliveryDate || Date.now())}
+                    mode="date"
+                    display="default"
+                    onChange={onDateChange}
+                />
+            )}
             <TextInput
                 style={styles.input}
                 placeholder="Number of Prenatal Visits"
@@ -137,6 +154,19 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginBottom: 15,
         paddingHorizontal: 10,
+    },
+    datePickerButton: {
+        height: 40,
+        borderColor: '#ddd',
+        borderWidth: 1,
+        borderRadius: 5,
+        marginBottom: 15,
+        justifyContent: 'center',
+        paddingHorizontal: 10,
+        backgroundColor: '#fff',
+    },
+    datePickerText: {
+        lineHeight: 40,
     },
     submitButton: {
         backgroundColor: '#d368e4',
