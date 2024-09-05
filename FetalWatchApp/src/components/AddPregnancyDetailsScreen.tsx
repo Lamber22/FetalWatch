@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 
 const AddPregnancyDetailsScreen = ({ route, navigation }: any) => {
-    const { patientId } = route.params;
+    const { patient } = route.params;
 
     const [gestationalAge, setGestationalAge] = useState('');
     const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('');
@@ -17,7 +17,7 @@ const AddPregnancyDetailsScreen = ({ route, navigation }: any) => {
 
     const handleSubmit = () => {
         const newPregnancy = {
-            patientId,
+            patient,
             gestationalAge: parseInt(gestationalAge),
             expectedDeliveryDate: new Date(expectedDeliveryDate),
             prenatalCare: {
@@ -37,7 +37,10 @@ const AddPregnancyDetailsScreen = ({ route, navigation }: any) => {
         // Submit newPregnancy to your backend or state management here
         // ...
 
-        navigation.goBack();
+        navigation.navigate('PatientDetails', {
+            patient,
+            newPregnancy: newPregnancy, // Pass the new pregnancy data back
+});
     };
 
     return (

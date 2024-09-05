@@ -112,7 +112,7 @@ const AddPatientScreen = ({ navigation, route }: any) => {
         };
 
         route.params.onSubmit(newPatient);
-        navigation.navigate('PregnancyDetails', { patient: newPatient });
+        navigation.navigate('PatientDetails', { patient: newPatient });
     };
 
     return (
