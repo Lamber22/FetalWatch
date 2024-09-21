@@ -16,7 +16,8 @@
     "baseUrl": ".", // Sets base URL for module resolution
     "paths": {
       "*": ["node_modules/*"] // Ensures node_modules are resolved correctly
-    }
+    },
+    "typeRoots": ["./node_modules/@types"]
   },
   "include": [
     "**/*.ts",
