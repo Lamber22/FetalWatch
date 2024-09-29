@@ -17,7 +17,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
     const handleLogin = async ({ email, password }: { email: string; password: string }) => {
         // Simulate login for testing purposes
-        const testEmail = 'fetalwatch@gmail.com';
+        const testEmail = 'admin@gmail.com';
         const testPassword = 'admin';
 
         if (email === testEmail && password === testPassword) {

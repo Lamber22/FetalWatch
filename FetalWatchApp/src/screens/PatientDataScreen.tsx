@@ -45,7 +45,7 @@ const PatientDataScreen = ({ route, navigation }: any) => {
 
                     <TouchableOpacity
                         style={styles.addButton}
-                        onPress={() => navigation.navigate('FetalWatch', { patientId: patient._id })}
+                        onPress={() => navigation.navigate('FetalWatch', { pregnancyId: newPregnancy._id })}
                     >
                         <Text style={styles.addButtonText}>Connect Fetal Device</Text>
                     </TouchableOpacity>

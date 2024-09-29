@@ -1,115 +1,177 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, Button, Alert, Platform, PermissionsAndroid, Linking, Modal, TouchableOpacity } from 'react-native';
-import BleManager from 'react-native-ble-manager';
-import BluetoothStateManager from 'react-native-bluetooth-state-manager';
-import LocationServicesDialogBox from "react-native-android-location-services-dialog-box";
+import { ScrollView, Text, View, TouchableOpacity, Alert, ActivityIndicator, Image, StyleSheet } from 'react-native';
+import axios from 'axios';
+import { Video, ResizeMode } from 'expo-av';
+import { Asset } from 'expo-asset'; // Import Asset for preloading of video and image
 
-BleManager.start({ showAlert: false });
+interface FetalData {
+    fetalHeartbeat: number;
+    measurements: {
+        crownRumpLength: number;
+        biparietalDiameter: number;
+        femurLength: number;
+        headCircumference: number;
+        abdominalCircumference: number;
+    };
+    growthAndDevelopment: string;
+    position: string;
+}
 
-const FetalWatchScreen = () => {
-    const [isBluetoothEnabled, setIsBluetoothEnabled] = useState(false);
-    const [isLocationEnabled, setIsLocationEnabled] = useState(false);
-    const [scanButtonEnabled, setScanButtonEnabled] = useState(false);
+const FetalWatchScreen = ({ route }: { route: any }) => {
+    const { pregnancyId } = route.params;
+    const [isConnected, setIsConnected] = useState(false);
+    const [fetalData, setFetalData] = useState<FetalData | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
+    const [showVideo, setShowVideo] = useState(false);
+    const [showImage, setShowImage] = useState(false); // For displaying scan image
 
+    // Preload assets
     useEffect(() => {
-        checkBluetoothAndLocation();
+        const preloadAssets = async () => {
+            try {
+                await Asset.loadAsync([
+                    require('../assets/fetal-video.mp4'),
+                    require('../assets/fetal-img.jpg'),
+                ]);
+                console.log('Assets preloaded successfully');
+            } catch (error) {
+                console.error('Asset preloading error:', error);
+            }
+        };
+        preloadAssets();
     }, []);
 
-    const checkBluetoothAndLocation = async () => {
-        if (Platform.OS === 'android') {
-            // Check Bluetooth status
-            BluetoothStateManager.getState().then((bluetoothState) => {
-                if (bluetoothState === 'PoweredOn') {
-                    setIsBluetoothEnabled(true);
-                } else {
-                    setIsBluetoothEnabled(false);
-                    showBluetoothPrompt();
-                }
-            });
+    const connectToDevice = () => {
+        setIsLoading(true);
+        setTimeout(() => {
+            setIsConnected(true);
+            setIsLoading(false);
+            Alert.alert('Connected to simulated FetalWatch device!');
+        }, 2000);
+    };
 
-            // Check Location status
-            PermissionsAndroid.request(
-                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-                {
-                    title: 'Location Permission',
-                    message: 'This app needs access to your location to use Bluetooth.',
-                    buttonNeutral: 'Ask Me Later',
-                    buttonNegative: 'Cancel',
-                    buttonPositive: 'OK',
-                }
-            ).then(granted => {
-                if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                    LocationServicesDialogBox.checkLocationServicesIsEnabled({
-                        message: "Use Location? This app requires location services to function properly.",
-                        ok: "YES",
-                        cancel: "NO"
-                    }).then((success) => {
-                        if (success.enabled) {
-                            setIsLocationEnabled(true);
-                        } else {
-                            setIsLocationEnabled(false);
-                            showLocationPrompt();
-                        }
-                    }).catch((error) => {
-                        setIsLocationEnabled(false);
-                        showLocationPrompt();
+    const startFetalScan = async () => {
+        if (!isConnected) {
+            Alert.alert('Not connected to any device');
+            return;
+        }
+
+        setIsLoading(true);
+        setIsScanning(true);
+
+        setTimeout(() => {
+            setShowVideo(true);
+
+            setTimeout(async () => {
+                const simulatedFetalData = {
+                    fetalHeartbeat: Math.floor(Math.random() * (160 - 120 + 1)) + 120,
+                    measurements: {
+                        crownRumpLength: parseFloat((Math.random() * (10 - 7) + 7).toFixed(2)),
+                        biparietalDiameter: parseFloat((Math.random() * (5 - 2) + 2).toFixed(2)),
+                        femurLength: parseFloat((Math.random() * (6 - 3) + 3).toFixed(2)),
+                        headCircumference: parseFloat((Math.random() * (25 - 15) + 15).toFixed(2)),
+                        abdominalCircumference: parseFloat((Math.random() * (23 - 15) + 15).toFixed(2)),
+                    },
+                    growthAndDevelopment: 'Normal',
+                    position: 'Cephalic',
+                };
+
+                setFetalData(simulatedFetalData);
+
+                try {
+                    const response = await axios.post('YOUR_BACKEND_API_URL/fetalwatch', {
+                        pregnancyId,
+                        fetalData: simulatedFetalData,
                     });
-                } else {
-                    setIsLocationEnabled(false);
-                    showLocationPrompt();
+                    setIsLoading(false);
+                    setIsScanning(false);
+                    setShowVideo(false); // Hide the video after scan completion
+                    setShowImage(true); // Show the image after scan completion
+                    Alert.alert('Scan complete and data saved successfully!');
+                } catch (error) {
+                    setIsLoading(false);
+                    setIsScanning(false);
+                    setShowVideo(false);
+                    console.error('Error saving data:', error);
+                    Alert.alert('Error saving data');
                 }
-            });
-        }
-
-        // Enable Scan button if both are enabled
-        if (isBluetoothEnabled && isLocationEnabled) {
-            setScanButtonEnabled(true);
-        } else {
-            setScanButtonEnabled(false);
-        }
-    };
-
-    const showBluetoothPrompt = () => {
-        Alert.alert(
-            "Enable Bluetooth",
-            "Bluetooth is required to scan for devices. Please enable Bluetooth.",
-            [{ text: "Open Settings", onPress: () => Linking.openSettings() }],
-            { cancelable: false }
-        );
-    };
-
-    const showLocationPrompt = () => {
-        Alert.alert(
-            "Enable Location",
-            "Location services are required to use Bluetooth. Please enable location services.",
-            [{ text: "Open Settings", onPress: () => Linking.openSettings() }],
-            { cancelable: false }
-        );
-    };
-
-    const scan = () => {
-        BleManager.scan([], 3, true).then(() => {
-            console.log('Scanning...');
-        });
+            }, 4000);
+        }, 4000);
     };
 
     return (
-        <View style={styles.container}>
-            {scanButtonEnabled ? (
-                <Button title="Scan" onPress={scan} />
-            ) : (
-                <Text>Please enable Bluetooth and Location to start scanning.</Text>
+        <ScrollView contentContainerStyle={{ padding: 20 }}>
+            <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>FetalWatch</Text>
+
+            <TouchableOpacity
+                style={{ backgroundColor: '#1E90FF', padding: 10, marginBottom: 20 }}
+                onPress={connectToDevice}
+                disabled={isConnected || isLoading}
+            >
+                {isLoading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                    <Text style={{ color: '#fff', textAlign: 'center' }}>
+                        {isConnected ? 'Connected' : 'Connect to FetalWatch Device'}
+                    </Text>
+                )}
+            </TouchableOpacity>
+
+            {isConnected && (
+                <TouchableOpacity
+                    style={{ backgroundColor: '#32CD32', padding: 10 }}
+                    onPress={startFetalScan}
+                    disabled={isLoading}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <Text style={{ color: '#fff', textAlign: 'center' }}>Start Fetal Scan</Text>
+                    )}
+                </TouchableOpacity>
             )}
-        </View>
+
+            {showVideo && (
+                <View style={{ marginTop: 80, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Scanning...</Text>
+                    <Video
+                        source={require('../assets/fetal-video.mp4')}
+                        style={{ width: 400, height: 200 }}
+                        resizeMode={ResizeMode.COVER}
+                        isLooping={false}
+                        shouldPlay
+                    />
+                </View>
+            )}
+
+            {fetalData && !isScanning && (
+                <View style={{ marginTop: 20 }}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold'}}>Fetal Health Data</Text>
+                    <Text>Fetal Heartbeat: {fetalData.fetalHeartbeat} BPM</Text>
+                    <Text>CRL: {fetalData.measurements.crownRumpLength} mm</Text>
+                    <Text>Biparietal Diameter: {fetalData.measurements.biparietalDiameter} mm</Text>
+                    <Text>Femur Length: {fetalData.measurements.femurLength} mm</Text>
+                    <Text>Head Circumference: {fetalData.measurements.headCircumference} mm</Text>
+                    <Text>Abdominal Circumference: {fetalData.measurements.abdominalCircumference} mm</Text>
+                    <Text>Growth and Development: {fetalData.growthAndDevelopment}</Text>
+                    <Text>Position: {fetalData.position}</Text>
+
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 10, textAlign: 'center' }}>Scan Image</Text>
+                    <Image
+                        source={require('../assets/fetal-img.png')}
+                        style={{ width: 380, height: 400 }}
+                        resizeMode="contain"
+                        onError={(error) => console.log('Image Load Error: ', error)}
+                        onLoad={() => console.log('Image loaded successfully')}
+                    />
+                </View>
+            )}
+        </ScrollView>
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-});
+StyleSheet.create({
 
+});
 export default FetalWatchScreen;
