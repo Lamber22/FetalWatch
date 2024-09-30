@@ -1,27 +1,45 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-import { NavigationProp } from '@react-navigation/native';
+import { NavigationProp, useNavigationState } from '@react-navigation/native';
 
 interface BottomNavProps {
     navigation: NavigationProp<any>;
 }
 
 const BottomNav: React.FC<BottomNavProps> = ({ navigation }) => {
+    // Get the current route name from the navigation state
+    const currentRoute = useNavigationState(state => state.routes[state.index].name);
+
     return (
         <View style={styles.bottomNav}>
-            <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Dashboard')}>
-                <Ionicons name="apps-outline" size={30} color="#FF1744" />
+            <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
+                <Ionicons
+                    name="apps-outline"
+                    size={30}
+                    color={currentRoute === 'Home' ? '#FF1744' : '#000'}
+                />
             </TouchableOpacity>
             <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Calendar')}>
-                <Ionicons name="calendar-outline" size={30} color="#000" />
+                <Ionicons
+                    name="calendar-outline"
+                    size={30}
+                    color={currentRoute === 'Calendar' ? '#FF1744' : '#000'}
+                />
             </TouchableOpacity>
             <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Health')}>
-                <Ionicons name="heart-outline" size={30} color="#000" />
+                <Ionicons
+                    name="heart-outline"
+                    size={30}
+                    color={currentRoute === 'Health' ? '#FF1744' : '#000'}
+                />
             </TouchableOpacity>
             <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
-                <Ionicons name="person-outline" size={30} color="#000" />
+                <Ionicons
+                    name="person-outline"
+                    size={30}
+                    color={currentRoute === 'Profile' ? '#FF1744' : '#000'}
+                />
             </TouchableOpacity>
         </View>
     );

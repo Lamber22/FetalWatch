@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-
+import BottomNav from '../components/ButtomNav';
 import { NavigationProp } from '@react-navigation/native';
 
 interface CalendarScreenProps {
@@ -25,7 +25,7 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps) => {
     ]);
 
     // Define health check reminders
-    const healthChecks = {
+    const healthChecks: { [key: string]: string } = {
         '2024-01-15': 'Initial check-up',
         '2024-02-15': 'Blood tests',
         '2024-03-20': '20-week ultrasound',
@@ -67,6 +67,8 @@ const CalendarScreen = ({ navigation }: CalendarScreenProps) => {
                     </TouchableOpacity>
                 )}
             />
+            {/* Add BottomNav here */}
+            <BottomNav navigation={navigation} />
         </View>
     );
 };
