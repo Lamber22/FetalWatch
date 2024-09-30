@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import BottomNav from '../components/ButtomNav'; // Import the BottomNav component
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -82,12 +83,16 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                 )}
             />
             <View style={styles.analyticsContainer}>
+                <Text style={styles.header}>Analytics</Text>
                 <Text style={styles.analyticsText}>Total Patient: 500</Text>
                 <Text style={styles.analyticsText}>Active patients: 400</Text>
                 <Text style={styles.analyticsText}>Expected to Deliver today: 20</Text>
                 <Text style={styles.analyticsText}>Expected this month: 200</Text>
-                <Text style={styles.analyticsText}>Expected to next month: 180</Text>
+                <Text style={styles.analyticsText}>Expected next month: 180</Text>
             </View>
+
+            {/* Add BottomNav here */}
+            <BottomNav navigation={navigation} />
         </View>
     );
 };
