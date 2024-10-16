@@ -11,6 +11,7 @@ import PatientDataScreen from '../screens/PatientDataScreen';
 import AddPregnancyDetailsScreen from '../components/AddPregnancyDetailsScreen';
 import FetalWatchScreen from '../components/FetalWatchScreen';
 import CalendarScreen from '../screens/CalendarScreen';
+import AIScreen from '../screens/AIScreen';
 
 export type RootStackParamList = {
     Login: undefined;
@@ -22,6 +23,7 @@ export type RootStackParamList = {
     AddPregnancyDetails: { patientId: string };
     FetalWatch: { patientId: string }; // Added FetalWatch to the types
     Calendar: undefined;
+    AI: { fetalWatchId: string }; // Added AI to the types
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -58,6 +60,11 @@ const AppNavigator = () => {
                     name="Calendar"
                     component={CalendarScreen}
                     options={{ title: 'Calendar' }}
+                />
+                <Stack.Screen
+                    name="AI"
+                    component={AIScreen}
+                    options={{ title: 'AI Analysis Result' }} // Optional: set a title
                 />
             </Stack.Navigator>
         </NavigationContainer>

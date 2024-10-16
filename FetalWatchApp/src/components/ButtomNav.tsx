@@ -27,7 +27,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ navigation }) => {
                     color={currentRoute === 'Calendar' ? '#FF1744' : '#000'}
                 />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Health')}>
+            <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('AI')}>
                 <Ionicons
                     name="heart-outline"
                     size={30}

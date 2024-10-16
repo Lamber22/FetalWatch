@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, Text, View, TouchableOpacity, Alert, ActivityIndicator, Image, StyleSheet } from 'react-native';
 import axios from 'axios';
 import { Video, ResizeMode } from 'expo-av';
-import { Asset } from 'expo-asset'; // Import Asset for preloading of video and image
+import { Asset } from 'expo-asset';
 
 interface FetalData {
     fetalHeartbeat: number;
@@ -17,14 +17,15 @@ interface FetalData {
     position: string;
 }
 
-const FetalWatchScreen = ({ route }: { route: any }) => {
+const FetalWatchScreen = ({ route, navigation }: { route: any, navigation: any }) => {
     const { pregnancyId } = route.params;
     const [isConnected, setIsConnected] = useState(false);
     const [fetalData, setFetalData] = useState<FetalData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [showVideo, setShowVideo] = useState(false);
-    const [showImage, setShowImage] = useState(false); // For displaying scan image
+    const [showImage, setShowImage] = useState(false);
+    const [scanCompleted, setScanCompleted] = useState(false);  // New state for tracking scan completion
 
     // Preload assets
     useEffect(() => {
@@ -41,6 +42,10 @@ const FetalWatchScreen = ({ route }: { route: any }) => {
         };
         preloadAssets();
     }, []);
+
+    useEffect(() => {
+        console.log('scanCompleted:', scanCompleted);
+    }, [scanCompleted]);
 
     const connectToDevice = () => {
         setIsLoading(true);
@@ -63,7 +68,7 @@ const FetalWatchScreen = ({ route }: { route: any }) => {
         setTimeout(() => {
             setShowVideo(true);
 
-            setTimeout(async () => {
+            setTimeout(() => {
                 const simulatedFetalData = {
                     fetalHeartbeat: Math.floor(Math.random() * (160 - 120 + 1)) + 120,
                     measurements: {
@@ -78,26 +83,21 @@ const FetalWatchScreen = ({ route }: { route: any }) => {
                 };
 
                 setFetalData(simulatedFetalData);
+                setIsLoading(false);
+                setIsScanning(false);
+                setShowVideo(false); // Hide the video after scan completion
+                setShowImage(true);  // Show the image after scan completion
+                setScanCompleted(true);  // Mark the scan as completed
+                Alert.alert('Scan complete!');
 
-                try {
-                    const response = await axios.post('YOUR_BACKEND_API_URL/fetalwatch', {
-                        pregnancyId,
-                        fetalData: simulatedFetalData,
-                    });
-                    setIsLoading(false);
-                    setIsScanning(false);
-                    setShowVideo(false); // Hide the video after scan completion
-                    setShowImage(true); // Show the image after scan completion
-                    Alert.alert('Scan complete and data saved successfully!');
-                } catch (error) {
-                    setIsLoading(false);
-                    setIsScanning(false);
-                    setShowVideo(false);
-                    console.error('Error saving data:', error);
-                    Alert.alert('Error saving data');
-                }
             }, 4000);
         }, 4000);
+    };
+
+    const navigateToAIScreen = () => {
+        if (fetalData) {
+            navigation.navigate('AI', { fetalWatchId: pregnancyId });
+        }
     };
 
     return (
@@ -162,10 +162,14 @@ const FetalWatchScreen = ({ route }: { route: any }) => {
                         source={require('../assets/fetal-img.png')}
                         style={styles.image}
                         resizeMode="contain"
-                        onError={(error) => console.log('Image Load Error: ', error)}
-                        onLoad={() => console.log('Image loaded successfully')}
                     />
                 </View>
+            )}
+            {/* console.log('Rendering, scanCompleted:', scanCompleted) */}
+            {scanCompleted && (
+                <TouchableOpacity style={styles.aiButton} onPress={navigateToAIScreen}>
+                    <Text style={styles.buttonText}>View AI Analysis</Text>
+                </TouchableOpacity>
             )}
         </ScrollView>
     );
@@ -190,6 +194,12 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
     },
+    aiButton: {
+        backgroundColor: '#FF6347',  // Different color to indicate AI button
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 20,
+    },
     buttonText: {
         color: '#fff',
         textAlign: 'center',
@@ -213,11 +223,6 @@ const styles = StyleSheet.create({
         padding: 10,
         backgroundColor: '#F5F5F5',
         borderRadius: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 5,
     },
     sectionTitle: {
         fontSize: 20,
