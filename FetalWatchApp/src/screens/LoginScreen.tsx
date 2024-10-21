@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet, Image, Text, TextInput, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../store/store';
+import { setEmail, setPassword, handleLogin } from '../slices/loginSlice';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -11,36 +13,22 @@ type Props = {
 };
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
+    const dispatch = useDispatch<AppDispatch>();
+    const { email, password, errorMessage, isAuthenticated } = useSelector((state: RootState) => state.login);
 
-    const handleLogin = async () => {
-        const testEmail = 'admin@gmail.com';
-        const testPassword = 'admin';
-
-        if (email === testEmail && password === testPassword) {
-            try {
-                await AsyncStorage.setItem('token', 'dummyTokenForTesting');
-                navigation.navigate('Home');
-            } catch (err) {
-                setErrorMessage('Error storing token');
-            }
-        } else {
-            setErrorMessage('Invalid login credentials');
-        }
+    const handleLoginPress = async () => {
+        dispatch(handleLogin({ email, password }));
     };
 
-    const handleRequestRegistration = () => {
-        navigation.navigate('Registration'); // Assuming you have a registration request screen
-    };
+    if (isAuthenticated) {
+        navigation.navigate('Home');
+    }
 
     return (
         <View style={styles.container}>
             {/* Logo Section */}
             <View style={styles.logoContainer}>
                 <Image source={require('../assets/fetalwatch-logo.png')} style={styles.logo} />
-                {/* <Text style={styles.title}>FetalWatch</Text> */}
                 <Text style={styles.subtitle}>Monitor your baby's health with ease</Text>
             </View>
 
@@ -48,7 +36,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             <TextInput
                 placeholder="Email"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => dispatch(setEmail(text))}
                 style={styles.input}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -57,7 +45,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             <TextInput
                 placeholder="Password"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => dispatch(setPassword(text))}
                 style={styles.input}
                 secureTextEntry
                 autoCapitalize="none"
@@ -66,7 +54,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
 
             {/* Login Button */}
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <TouchableOpacity style={styles.button} onPress={handleLoginPress}>
                 <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
 
@@ -78,7 +66,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             {/* Request Registration */}
             <View style={styles.registrationRequestContainer}>
                 <Text style={styles.requestText}>Don't have an account?</Text>
-                <TouchableOpacity onPress={handleRequestRegistration}>
+                <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
                     <Text style={styles.requestLink}>Request registration</Text>
                 </TouchableOpacity>
             </View>
