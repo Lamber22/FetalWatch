@@ -3,6 +3,9 @@ import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity, ScrollVi
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import BottomNav from '../components/ButtomNav'; // Import the BottomNav component
+import { useDispatch, useSelector } from 'react-redux';
+import { getPatients, createPatient } from '../slices/patientSlice'; // Corrected import
+import { RootState } from '../store/store';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -10,42 +13,19 @@ type Props = {
     navigation: HomeScreenNavigationProp;
 };
 
-interface Patient {
-    _id: string;
-    name: string;
-    age: number;
-    gestationalAge: string;
-    expectedDeliveryDate: string;
-}
-
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
-    const [patients, setPatients] = useState<Patient[]>([]);
+    const dispatch = useDispatch();
+    const { patients, loading, error } = useSelector((state: RootState) => state.patients); // Corrected selector
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        const dummyPatients: Patient[] = [
-            {
-                _id: '1',
-                name: 'Mary Kollie',
-                age: 30,
-                gestationalAge: '32 weeks',
-                expectedDeliveryDate: '2024-03-15',
-            },
-            {
-                _id: '2',
-                name: 'Faith Dolo',
-                age: 28,
-                gestationalAge: '36 weeks',
-                expectedDeliveryDate: '2024-02-20',
-            },
-        ];
-        setPatients(dummyPatients);
-    }, []);
+        dispatch(getPatients());
+    }, [dispatch]);
 
     const handleAddNewPatient = () => {
         navigation.navigate('AddPatient', {
             onSubmit: (newPatient: Patient) => {
-                setPatients([...patients, newPatient]);
+                dispatch(createPatient(newPatient)); // Corrected function call
             }
         });
     };
@@ -74,21 +54,27 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                     <Text style={styles.addButtonText}>Add new patient</Text>
                 </TouchableOpacity>
 
-                <FlatList
-                    data={patients}
-                    keyExtractor={(item) => item._id}
-                    renderItem={({ item }) => (
-                        <View style={styles.listItem}>
-                            <Text style={styles.patientName}>{item.name}</Text>
-                            <TouchableOpacity
-                                style={styles.detailsButton}
-                                onPress={() => navigation.navigate('Patient', { id: item._id })}
-                            >
-                                <Text style={styles.detailsButtonText}>View details</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                />
+                {loading ? (
+                    <Text>Loading...</Text>
+                ) : error ? (
+                    <Text>Error: {error}</Text>
+                ) : (
+                    <FlatList
+                        data={patients}
+                        keyExtractor={(item) => item._id}
+                        renderItem={({ item }) => (
+                            <View style={styles.listItem}>
+                                <Text style={styles.patientName}>{item.name}</Text>
+                                <TouchableOpacity
+                                    style={styles.detailsButton}
+                                    onPress={() => navigation.navigate('Patient', { id: item._id })}
+                                >
+                                    <Text style={styles.detailsButtonText}>View details</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    />
+                )}
                 <View style={styles.analyticsContainer}>
                     <Text style={styles.header}>Analytics</Text>
                     <View style={styles.analyticsRow}>

@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { fetchPregnancyById } from '../slices/PregnancySlice'; // Import fetchPregnancyById
+import { useDispatch } from 'react-redux';
 
 const PatientDataScreen = ({ route, navigation }: any) => {
     const { patient, newPregnancy: initialPregnancy } = route.params;
     const [newPregnancy, setNewPregnancy] = useState(initialPregnancy);
+    const dispatch = useDispatch();
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             // Fetch or update the newPregnancy data here if needed
             setNewPregnancy(route.params?.newPregnancy || newPregnancy);
+            if (newPregnancy) {
+                dispatch(fetchPregnancyById(newPregnancy._id)); // Fetch pregnancy details
+            }
         });
 
         return unsubscribe;
-    }, [navigation, route.params?.newPregnancy]);
+    }, [navigation, route.params?.newPregnancy, newPregnancy, dispatch]);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>

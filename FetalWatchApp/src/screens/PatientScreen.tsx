@@ -1,45 +1,47 @@
 // src/screens/PatientScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
-
-// Dummy data for testing purposes
-const dummyPatients = [
-    { id: 1, name: 'John Doe', age: 30 },
-    { id: 2, name: 'Jane Smith', age: 29 },
-    { id: 3, name: 'Michael Johnson', age: 40 },
-];
+import { useDispatch, useSelector } from 'react-redux';
+import { getPatients } from '../slices/patientSlice'; // Updated import
+import { fetchPregnancies } from '../slices/PregnancySlice'; // Import fetchPregnancies
+import { RootState } from '../store/store';
 
 const PatientScreen = () => {
-    const [patients, setPatients] = useState(dummyPatients); // Use dummy data directly
-    const [error, setError] = useState('');
+    const dispatch = useDispatch();
+    const { patients, loading, error } = useSelector((state: RootState) => state.patients); // Updated selector
+    const { pregnancies } = useSelector((state: RootState) => state.pregnancies); // Add pregnancies selector
 
     useEffect(() => {
-        // Comment out the API call to use dummy data
-        // const fetchPatients = async () => {
-        //     try {
-        //         const response = await api.get('/patients');
-        //         setPatients(response.data);
-        //     } catch (err) {
-        //         setError('Network error: Failed to load patients');
-        //     }
-        // };
-
-        // fetchPatients();
-    }, []);
+        dispatch(getPatients());
+        dispatch(fetchPregnancies()); // Fetch pregnancies
+    }, [dispatch]);
 
     return (
         <View style={styles.container}>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <FlatList
-                data={patients}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                    <View style={styles.item}>
-                        <Text>{item.name}</Text>
-                        <Text>{item.age} years old</Text>
-                    </View>
-                )}
-            />
+            {loading ? (
+                <Text>Loading...</Text>
+            ) : error ? (
+                <Text>Error: {error}</Text>
+            ) : (
+                <FlatList
+                    data={patients}
+                    keyExtractor={(item) => item._id}
+                    renderItem={({ item }) => (
+                        <View style={styles.item}>
+                            <Text>{item.firstName} {item.lastName}</Text> {/* Updated to match patient data */}
+                            <Text>{item.age} years old</Text>
+                            {/* Display pregnancies for each patient */}
+                            <FlatList
+                                data={pregnancies.filter(pregnancy => pregnancy.patientId === item._id)}
+                                keyExtractor={(pregnancy) => pregnancy._id}
+                                renderItem={({ pregnancy }) => (
+                                    <Text>Pregnancy ID: {pregnancy._id}</Text>
+                                )}
+                            />
+                        </View>
+                    )}
+                />
+            )}
         </View>
     );
 };
