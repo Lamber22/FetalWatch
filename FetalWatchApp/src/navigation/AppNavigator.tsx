@@ -34,7 +34,11 @@ const AppNavigator = () => {
             <Stack.Navigator initialRouteName="Login">
                 <Stack.Screen name="Login" component={LoginScreen} />
                 <Stack.Screen name="Registration" component={RegistrationScreen} />
-                <Stack.Screen name="Home" component={HomeScreen} />
+                <Stack.Screen
+                    name="Home"
+                    component={HomeScreen}
+                    options={{ headerLeft: null, title: 'Dashboard Overview' }}
+                />
                 <Stack.Screen name="Patient" component={PatientScreen} />
                 <Stack.Screen
                     name="AddPatient"

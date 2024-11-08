@@ -4,19 +4,20 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api/v1/',
+    baseURL: 'http://172.10.10.191:5000/api/v1',
 });
 
-// Add a request interceptor
 api.interceptors.request.use(
     async (config) => {
         const token = await AsyncStorage.getItem('token');
         if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
+            config.headers.Authorization = `Bearer ${token}`;
         }
+        console.log('API request config:', config); // Debug log
         return config;
     },
     (error) => {
+        console.error('API request error:', error); // Debug log
         return Promise.reject(error);
     }
 );

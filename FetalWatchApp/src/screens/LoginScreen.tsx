@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, Image, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
@@ -14,15 +14,19 @@ type Props = {
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
     const dispatch = useDispatch<AppDispatch>();
-    const { email, password, errorMessage, isAuthenticated } = useSelector((state: RootState) => state.login);
+    const { email, password, errorMessage, isAuthenticated, loading } = useSelector((state: RootState) => state.login);
 
+    // Handle login press
     const handleLoginPress = async () => {
         dispatch(handleLogin({ email, password }));
     };
 
-    if (isAuthenticated) {
-        navigation.navigate('Home');
-    }
+    // Navigate to home when authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigation.navigate('Home');
+        }
+    }, [isAuthenticated, navigation]);
 
     return (
         <View style={styles.container}>
@@ -54,8 +58,8 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
 
             {/* Login Button */}
-            <TouchableOpacity style={styles.button} onPress={handleLoginPress}>
-                <Text style={styles.buttonText}>Login</Text>
+            <TouchableOpacity style={styles.button} onPress={handleLoginPress} disabled={loading}>
+                <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
             </TouchableOpacity>
 
             {/* Forgot Password */}
@@ -90,12 +94,6 @@ const styles = StyleSheet.create({
         width: 120,
         height: 120,
         marginBottom: 10,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 5,
     },
     subtitle: {
         fontSize: 16,
@@ -142,7 +140,7 @@ const styles = StyleSheet.create({
         marginRight: 5,
     },
     requestLink: {
-        color: '#007bff', // Blue color for the link
+        color: '#007bff',
         textDecorationLine: 'underline',
     },
 });

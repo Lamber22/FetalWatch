@@ -1,6 +1,8 @@
 // src/components/AuthForm.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { useDispatch } from 'react-redux';
+import { login } from '../slices/loginSlice';
 
 interface AuthFormProps {
     headerText: string;
@@ -19,8 +21,14 @@ const AuthForm: React.FC<AuthFormProps> = ({
     defaultEmail = '',
     defaultPassword = ''
     }) => {
+    const dispatch = useDispatch();
     const [email, setEmail] = useState(defaultEmail);
     const [password, setPassword] = useState(defaultPassword);
+
+    const handleSubmit = (data: { email: string; password: string }) => {
+        dispatch(login(data));
+        onSubmit(data);
+    };
 
     return (
         <View style={styles.container}>
@@ -43,7 +51,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
             secureTextEntry
         />
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-        <Button title={submitButtonText} onPress={() => onSubmit({ email, password })} />
+        <Button title={submitButtonText} onPress={() => handleSubmit({ email, password })} />
         </View>
     );
 };

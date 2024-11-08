@@ -22,25 +22,27 @@ const initialState: LoginState = {
 
 // AsyncThunk for login process with API integration
 export const handleLogin = createAsyncThunk(
-    'login/handleLogin',
+    'auth/loginUser',
     async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
         try {
-            const response = await api.post('/login', { email, password }); // Use the api instance
-
-            // Assuming the token is returned in the response
+            console.log('Sending login request to /auth/signIn with:', { email, password }); // Debug log
+            const response = await api.post('/auth/signIn', { email, password });
+            console.log('Login response:', response.data); // Debug log
             const { token } = response.data;
-
-            // Save token to AsyncStorage
             await AsyncStorage.setItem('token', token);
-
-            // Return token and user data
             return response.data;
         } catch (err) {
+            console.error('Login error:', err); // Debug log
+            if (err instanceof AxiosError) {
+                console.error('Axios error message:', err.message); // Debug log
+                console.error('Axios error stack:', err.stack); // Debug log
+            }
             const error = err as AxiosError;
             if (error.response && error.response.data) {
-                return rejectWithValue(error.response.data);
+                console.error('Error response data:', error.response.data); // Debug log
+                return rejectWithValue('Wrong email or password');
             } else {
-                return rejectWithValue('An unexpected error occurred');
+                return rejectWithValue('Something went wrong. Please try again.');
             }
         }
     }
@@ -56,6 +58,10 @@ const loginSlice = createSlice({
         },
         setPassword: (state, action: PayloadAction<string>) => {
             state.password = action.payload;
+        },
+        login: (state, action: PayloadAction<{ email: string; password: string }>) => {
+            state.email = action.payload.email;
+            state.password = action.payload.password;
         },
         logout: (state) => {
             state.email = '';
@@ -85,6 +91,6 @@ const loginSlice = createSlice({
 });
 
 // Export actions
-export const { setEmail, setPassword, logout } = loginSlice.actions;
+export const { setEmail, setPassword, logout, login } = loginSlice.actions;
 
 export default loginSlice.reducer;
