@@ -12,14 +12,16 @@ import fetalRouter from "./routes/fetalRoute.js";
 
 const app = express();
 
-// Middleware for parsing JSON request bodies
 app.use(express.json());
+app.use(morgan("dev"));
+app.use(cors({
+    origin: '*', // Allow all origins for testing purposes
+}));
 
 app.get("/api/v1/", (req, res) => {
     res.status(200).json({ message: "Hello from FetalWatch API" });
 });
-app.use(morgan("dev"));
-app.use(cors());
+
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/patients", patientRouter);
