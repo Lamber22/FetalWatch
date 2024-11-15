@@ -101,26 +101,24 @@ export const managePatients = async (req, res) => {
         const { page = 1, limit = 10, search = "" } = req.query;
 
         const query = search
-        ? {
-            $or: [{ _id: search }, { email: { $regex: search, $options: "i" } }],
+            ? {
+                $or: [{ _id: search }, { email: { $regex: search, $options: "i" } }],
             }
-        : {};
+            : {};
 
         const patients = await Patient.find(query)
-        .select("-password")
-        .skip((page - 1) * limit)
-        .limit(Number(limit));
+            .select("-password")
+            .skip((page - 1) * limit)
+            .limit(Number(limit));
 
         const totalPatients = await Patient.countDocuments(query);
 
         res.status(200).json({
-        patients,
-        totalPages: Math.ceil(totalUsers / limit),
-        currentPage: Number(page),
+            patients,
+            totalPages: Math.ceil(totalPatients / limit),
+            currentPage: Number(page),
         });
     } catch (error) {
-        res
-        .status(500)
-        .json({ error: "Server error", errorMessage: error.message });
+        res.status(500).json({ error: "Server error", errorMessage: error.message });
     }
 };

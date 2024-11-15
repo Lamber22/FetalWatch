@@ -12,13 +12,14 @@ import AddPregnancyDetailsScreen from '../components/AddPregnancyDetailsScreen';
 import FetalWatchScreen from '../components/FetalWatchScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import AIScreen from '../screens/AIScreen';
+import PatientDetailScreen from '../screens/PatientDetailScreen'; // Import PatientDetailScreen
 
 export type RootStackParamList = {
     Login: undefined;
     Registration: undefined;
     Home: undefined;
     Patient: { id: string };
-    AddPatient: { onSubmit: (newPatient: any) => void };
+    AddPatient: undefined;
     PatientDetails: { patient: any; pregnancy: any }; // Adjust the type as needed
     AddPregnancyDetails: { patientId: string };
     FetalWatch: { patientId: string }; // Added FetalWatch to the types
@@ -58,7 +59,7 @@ const AppNavigator = () => {
                 <Stack.Screen
                     name="FetalWatch"
                     component={FetalWatchScreen}
-                    options={{ title: 'Fetal Watch' }} // Optional: set a title
+                    options={{ title: 'Fetal Watch' }}
                 />
                 <Stack.Screen
                     name="Calendar"
@@ -68,7 +69,12 @@ const AppNavigator = () => {
                 <Stack.Screen
                     name="AI"
                     component={AIScreen}
-                    options={{ title: 'AI Analysis Result' }} // Optional: set a title
+                    options={{ title: 'AI Analysis Result' }}
+                />
+                <Stack.Screen
+                    name="PatientDetail"
+                    component={PatientDetailScreen}
+                    options={{ title: 'Patient Details' }}
                 />
             </Stack.Navigator>
         </NavigationContainer>

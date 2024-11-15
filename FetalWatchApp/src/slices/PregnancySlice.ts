@@ -7,14 +7,37 @@ export const fetchPregnancies = createAsyncThunk('pregnancies/fetchAll', async (
     return response.data.data;
 });
 
-export const fetchPregnancyById = createAsyncThunk('pregnancies/fetchById', async (id: string) => {
-    const response = await api.get(`/pregnancies/${id}`);
-    return response.data.data;
-});
+export const fetchPregnancyById = createAsyncThunk(
+    'pregnancies/fetchPregnancyById',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            const response = await api.get(`/api/v1/pregnancies/${id}`);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response.data);
+        }
+    }
+);
 
-export const createPregnancy = createAsyncThunk('pregnancies/create', async (pregnancyData: any) => {
-    const response = await api.post('/pregnancies', pregnancyData);
-    return response.data.data;
+export const fetchPregnanciesByPatientId = createAsyncThunk(
+    'pregnancies/fetchPregnanciesByPatientId',
+    async (patientId: string, { rejectWithValue }) => {
+        try {
+            const response = await api.get(`/api/v1/pregnancies/patient/${patientId}`);
+            return response.data.data;
+        } catch (error) {
+            return rejectWithValue(error.response.data);
+        }
+    }
+);
+
+export const createPregnancy = createAsyncThunk('pregnancies/create', async (pregnancyData: any, { rejectWithValue }) => {
+    try {
+        const response = await api.post('/pregnancies', pregnancyData);
+        return response.data.data;
+    } catch (error) {
+        return rejectWithValue(error.response.data);
+    }
 });
 
 export const updatePregnancy = createAsyncThunk('pregnancies/update', async ({ id, pregnancyData }: { id: string, pregnancyData: any }) => {
@@ -63,6 +86,18 @@ const pregnancySlice = createSlice({
                 }
             })
             .addCase(fetchPregnancyById.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message;
+            })
+            .addCase(fetchPregnanciesByPatientId.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchPregnanciesByPatientId.fulfilled, (state, action) => {
+                state.loading = false;
+                state.pregnancies = action.payload;
+            })
+            .addCase(fetchPregnanciesByPatientId.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message;
             })

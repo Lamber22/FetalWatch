@@ -49,7 +49,7 @@ export const deletePatient = createAsyncThunk('patients/delete', async (id, { re
     }
 });
 
-export const managePatients = createAsyncThunk('patients/manage', async ({ page, limit, search }, { rejectWithValue }) => {
+export const managePatients = createAsyncThunk('patients/manage', async ({ page, limit, search }: { page: number; limit: number; search: string }, { rejectWithValue }) => {
     try {
         const response = await api.get(API_URL, { params: { page, limit, search } });
         return response.data;
@@ -76,7 +76,7 @@ const patientSlice = createSlice({
             })
             .addCase(createPatient.fulfilled, (state, action) => {
                 state.loading = false;
-                state.patients.push(action.payload.data);
+                state.patients.push(action.payload);  // Ensure the state is correctly updated
             })
             .addCase(createPatient.rejected, (state, action) => {
                 state.loading = false;
@@ -88,7 +88,7 @@ const patientSlice = createSlice({
             })
             .addCase(getPatients.fulfilled, (state, action) => {
                 state.loading = false;
-                state.patients = action.payload.data;
+                state.patients = action.payload;  // Ensure the state is correctly updated with the list of patients
             })
             .addCase(getPatients.rejected, (state, action) => {
                 state.loading = false;

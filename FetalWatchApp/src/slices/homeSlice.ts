@@ -2,12 +2,49 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api/api';
 
 // Types for Patient and Analytics
+interface ContactInformation {
+    phone: string;
+    email: string;
+}
+
+interface EmergencyContact {
+    name: string;
+    phone: string;
+}
+
+interface MedicalHistory {
+    previousPregnancies: {
+        number: number | null;
+        outcomes: string[];
+        complications: string[];
+    };
+    obstetricHistory: {
+        gravida: number | null;
+        para: number | null;
+        abortions: number | null;
+    };
+    chronicIllnesses: string[];
+    allergies: string[];
+    contraceptionHistory: string;
+    surgicalHistory: string[];
+    currentMedications: string[];
+}
+
 interface Patient {
     _id: string;
-    name: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
     age: number;
-    gestationalAge: string;
-    expectedDeliveryDate: string;
+    gender: string;
+    address: string;
+    contactInformation: ContactInformation;
+    emergencyContact: EmergencyContact;
+    medicalHistory: MedicalHistory;
+    pregnancies: any[];
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
 }
 
 interface Analytics {
@@ -36,7 +73,7 @@ const initialState: HomeState = {
 // Async thunk to fetch patients
 export const fetchPatients = createAsyncThunk('home/fetchPatients', async (_, { rejectWithValue }) => {
     try {
-        const response = await api.get('/patients'); // Use the shared api instance
+        const response = await api.get('/patients');
         return response.data;
     } catch (error: any) {
         return rejectWithValue(error.response?.data?.message || 'Error fetching patients');
@@ -50,6 +87,16 @@ export const fetchAnalytics = createAsyncThunk('home/fetchAnalytics', async (_, 
         return response.data;
     } catch (error: any) {
         return rejectWithValue(error.response?.data?.message || 'Error fetching analytics');
+    }
+});
+
+// Async thunk to fetch patients after adding a new patient
+export const fetchPatientsAfterAdd = createAsyncThunk('home/fetchPatientsAfterAdd', async (_, { rejectWithValue }) => {
+    try {
+        const response = await api.get('/patients');
+        return response.data;
+    } catch (error: any) {
+        return rejectWithValue(error.response?.data?.message || 'Error fetching patients');
     }
 });
 
@@ -84,6 +131,19 @@ const homeSlice = createSlice({
             state.analytics = action.payload;
         });
         builder.addCase(fetchAnalytics.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
+        });
+
+        // Fetch patients after adding a new patient
+        builder.addCase(fetchPatientsAfterAdd.pending, (state) => {
+            state.loading = true;
+        });
+        builder.addCase(fetchPatientsAfterAdd.fulfilled, (state, action) => {
+            state.loading = false;
+            state.patients = action.payload;
+        });
+        builder.addCase(fetchPatientsAfterAdd.rejected, (state, action) => {
             state.loading = false;
             state.error = action.payload as string;
         });

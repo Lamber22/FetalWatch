@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Platform, TouchableOpacity, ScrollView, TouchableHighlight } from 'react-native';
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    ScrollView,
+    StyleSheet,
+    Modal,
+    Platform,
+} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 
@@ -35,25 +44,9 @@ const AddPatientScreen = ({ navigation, route }: any) => {
     const [dateOfBirth, setDateOfBirth] = useState('');
     const [age, setAge] = useState('');
     const [gender, setGender] = useState('');
-    const [address, setAddress] = useState('');
-    const [phone, setPhone] = useState('');
-    const [email, setEmail] = useState('');
-    const [educationLevel, setEducationLevel] = useState('');
-    const [occupation, setOccupation] = useState('');
-    const [income, setIncome] = useState('');
-    const [emergencyName, setEmergencyName] = useState('');
-    const [emergencyPhone, setEmergencyPhone] = useState('');
-    const [chronicIllnesses, setChronicIllnesses] = useState('');
-    const [allergies, setAllergies] = useState('');
-    const [previousPregnancies, setPreviousPregnancies] = useState('');
-    const [gravida, setGravida] = useState('');
-    const [para, setPara] = useState('');
-    const [abortions, setAbortions] = useState('');
-    const [contraceptionHistory, setContraceptionHistory] = useState('');
-    const [surgicalHistory, setSurgicalHistory] = useState('');
-    const [currentMedications, setCurrentMedications] = useState('');
-
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [showErrorModal, setShowErrorModal] = useState(false);
 
     const calculateAge = (dob: string) => {
         const birthDate = new Date(dob);
@@ -76,214 +69,107 @@ const AddPatientScreen = ({ navigation, route }: any) => {
     };
 
     const handleSubmit = () => {
+        if (!firstName || !lastName || !dateOfBirth || !gender) {
+            setErrorMessage('Please fill in all required fields.');
+            setShowErrorModal(true);
+            return;
+        }
+
         const newPatient = {
             firstName,
             lastName,
             dateOfBirth,
             age: parseInt(age),
             gender,
-            address,
-            contactInformation: {
-                phone,
-                email,
-            },
-            occupation,
-            emergencyContact: {
-                name: emergencyName,
-                phone: emergencyPhone,
-            },
-            medicalHistory: {
-                chronicIllnesses: chronicIllnesses.split(',').map(item => item.trim()),
-                allergies: allergies.split(',').map(item => item.trim()),
-                previousPregnancies: {
-                    number: parseInt(previousPregnancies),
-                    outcomes: [], // Adjust based on how you collect these values
-                    complications: [], // Adjust based on how you collect these values
-                },
-                obstetricHistory: {
-                    gravida: parseInt(gravida),
-                    para: parseInt(para),
-                    abortions: parseInt(abortions),
-                },
-                contraceptionHistory,
-                surgicalHistory: surgicalHistory.split(',').map(item => item.trim()),
-                currentMedications: currentMedications.split(',').map(item => item.trim()),
-            },
         };
 
-        route.params.onSubmit(newPatient);
-        navigation.navigate('PatientDetails', { patient: newPatient });
+        if (route.params && route.params.onSubmit) {
+            route.params.onSubmit(newPatient);
+            navigation.navigate('PatientDetails', { patient: newPatient });
+        } else {
+            setErrorMessage('An error occurred while submitting the form.');
+            setShowErrorModal(true);
+        }
     };
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Add New Patient</Text>
-            <FloatingLabelInput
-                label="First Name"
-                value={firstName}
-                onChange={setFirstName}
-            />
-            <FloatingLabelInput
-                label="Last Name"
-                value={lastName}
-                onChange={setLastName}
-            />
-            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                <FloatingLabelInput
-                    label="Date of Birth (YYYY-MM-DD)"
-                    value={dateOfBirth}
-                    onChange={() => {}}
-                    onFocus={() => setShowDatePicker(true)}
-                />
-            </TouchableOpacity>
-            {showDatePicker && (
-                <DateTimePicker
-                    value={new Date()}
-                    mode="date"
-                    display="default"
-                    onChange={onDateChange}
-                />
-            )}
-            <FloatingLabelInput
-                label="Age"
-                value={age}
-                onChange={setAge}
-                keyboardType="numeric"
-            />
+        <View style={{ flex: 1, backgroundColor: '#f9f9f9' }}>
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    flexGrow: 1,
+                    padding: 20,
+                }}
+            >
+                <Text style={styles.title}>Add New Patient</Text>
 
-            {/* Gender Dropdown */}
-            <View style={styles.pickerContainer}>
-                <Picker
-                    selectedValue={gender}
-                    onValueChange={(itemValue) => setGender(itemValue)}
-                    style={styles.picker}
+                <Modal
+                    transparent={true}
+                    visible={showErrorModal}
+                    animationType="slide"
+                    onRequestClose={() => setShowErrorModal(false)}
                 >
-                    <Picker.Item label="Select Gender" value="" />
-                    <Picker.Item label="Female" value="female" />
-                    <Picker.Item label="Male" value="male" />
-                    <Picker.Item label="Other" value="other" />
-                </Picker>
-            </View>
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalText}>{errorMessage}</Text>
+                            <TouchableOpacity
+                                style={styles.modalButton}
+                                onPress={() => setShowErrorModal(false)}
+                            >
+                                <Text style={styles.modalButtonText}>OK</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
 
-            <FloatingLabelInput
-                label="Address"
-                value={address}
-                onChange={setAddress}
-            />
-            <FloatingLabelInput
-                label="Phone Number"
-                value={phone}
-                onChange={setPhone}
-                keyboardType="phone-pad"
-            />
-            <FloatingLabelInput
-                label="Email (optional)"
-                value={email}
-                onChange={setEmail}
-                keyboardType="email-address"
-            />
-            <FloatingLabelInput
-                label="educationLevel"
-                value={educationLevel}
-                onChange={setEducationLevel}
-            />
-            <FloatingLabelInput
-                label="occupation"
-                value={occupation}
-                onChange={setOccupation}
-            />
-            <FloatingLabelInput
-                label="income"
-                value={income}
-                onChange={setIncome}
-            />
-            <FloatingLabelInput
-                label="Emergency Contact Name"
-                value={emergencyName}
-                onChange={setEmergencyName}
-            />
-            <FloatingLabelInput
-                label="Emergency Contact Phone"
-                value={emergencyPhone}
-                onChange={setEmergencyPhone}
-                keyboardType="phone-pad"
-            />
+                <FloatingLabelInput label="First Name" value={firstName} onChange={setFirstName} />
+                <FloatingLabelInput label="Last Name" value={lastName} onChange={setLastName} />
 
-            {/* Medical History */}
-            <Text style={styles.subtitle}>Medical History</Text>
-            <FloatingLabelInput
-                label="Chronic Illnesses (comma separated)"
-                value={chronicIllnesses}
-                onChange={setChronicIllnesses}
-            />
-            <FloatingLabelInput
-                label="Allergies (comma separated)"
-                value={allergies}
-                onChange={setAllergies}
-            />
-            <FloatingLabelInput
-                label="Number of Previous Pregnancies"
-                value={previousPregnancies}
-                onChange={setPreviousPregnancies}
-                keyboardType="numeric"
-            />
-            <FloatingLabelInput
-                label="Gravida"
-                value={gravida}
-                onChange={setGravida}
-                keyboardType="numeric"
-            />
-            <FloatingLabelInput
-                label="Para"
-                value={para}
-                onChange={setPara}
-                keyboardType="numeric"
-            />
-            <FloatingLabelInput
-                label="Abortions"
-                value={abortions}
-                onChange={setAbortions}
-                keyboardType="numeric"
-            />
-            <FloatingLabelInput
-                label="Contraception History"
-                value={contraceptionHistory}
-                onChange={setContraceptionHistory}
-            />
-            <FloatingLabelInput
-                label="Surgical History (comma separated)"
-                value={surgicalHistory}
-                onChange={setSurgicalHistory}
-            />
-            <FloatingLabelInput
-                label="Current Medications (comma separated)"
-                value={currentMedications}
-                onChange={setCurrentMedications}
-            />
+                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
+                    <FloatingLabelInput
+                        label="Date of Birth (YYYY-MM-DD)"
+                        value={dateOfBirth}
+                        onChange={() => {}}
+                        onFocus={() => setShowDatePicker(true)}
+                    />
+                </TouchableOpacity>
+                {showDatePicker && (
+                    <DateTimePicker
+                        value={new Date()}
+                        mode="date"
+                        display="default"
+                        onChange={onDateChange}
+                    />
+                )}
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                <Text style={styles.submitButtonText}>Submit</Text>
-            </TouchableOpacity>
-        </ScrollView>
+                <FloatingLabelInput label="Age" value={age} onChange={setAge} keyboardType="numeric" />
+
+                <View style={styles.pickerContainer}>
+                    <Picker
+                        selectedValue={gender}
+                        onValueChange={(itemValue) => setGender(itemValue)}
+                        style={styles.picker}
+                    >
+                        <Picker.Item label="Select Gender" value="" />
+                        <Picker.Item label="Female" value="female" />
+                        <Picker.Item label="Male" value="male" />
+                        <Picker.Item label="Other" value="other" />
+                    </Picker>
+                </View>
+
+                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+                    <Text style={styles.submitButtonText}>Submit</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flexGrow: 1,
-        padding: 20,
-        backgroundColor: '#f9f9f9',
-    },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
-        textAlign: 'center',
-    },
-    subtitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginVertical: 10,
         textAlign: 'center',
     },
     floatingLabelContainer: {
@@ -335,11 +221,40 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 5,
         alignItems: 'center',
+        marginTop: 20,
     },
     submitButtonText: {
         color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        width: 300,
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    modalText: {
+        fontSize: 16,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    modalButton: {
+        backgroundColor: '#d368e4',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+    },
+    modalButtonText: {
+        color: 'white',
+        fontSize: 16,
     },
 });
 

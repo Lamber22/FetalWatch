@@ -83,11 +83,11 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 22,
         fontWeight: '600',
-        marginVertical: 10,  // Increased margin for better spacing
+        marginVertical: 10,
     },
     infoText: {
         fontSize: 15,
-        marginVertical: 4,  // Added margin for better spacing
+        marginVertical: 4,
     },
     addButton: {
         backgroundColor: '#d368e4',
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     },
     addButtonText: {
         color: '#fff',
-        fontSize: 20,  // Increased from 18
+        fontSize: 20,
         fontWeight: 'bold',
     },
 });

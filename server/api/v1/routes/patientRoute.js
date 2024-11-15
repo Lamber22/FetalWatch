@@ -12,7 +12,7 @@ const router = Router();
 
 router.post("/", createPatient);
 router.get("/", getPatients);
-router.get("/", managePatients);  // Use managePatients for pagination and search
+router.get("/manage", managePatients); // Changed route to avoid conflict
 router.get("/:patientId", getPatientById);
 router.put("/:patientId", updatePatient);
 router.delete("/:patientId", deletePatient);

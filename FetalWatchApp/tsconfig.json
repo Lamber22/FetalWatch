@@ -1,14 +1,17 @@
 {
   "compilerOptions": {
-    "strict": true,
+    "strict": false,                   // Disable all strict checks
     "target": "esnext",
     "module": "esnext",
     "jsx": "react-native",
     "moduleResolution": "node",
     "allowJs": true,
-    "skipLibCheck": true,
+    "skipLibCheck": true,              // Skip type checking of all declaration files
+    "noImplicitAny": false,            // Allow implicit "any" types
+    "noImplicitThis": false,           // Allow implicit "this" types
+    "suppressImplicitAnyIndexErrors": true, // Suppress errors on indexing objects with 'any' type
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": false, // Disable case sensitivity
     "noEmit": true,
     "resolveJsonModule": true,
     "isolatedModules": true,

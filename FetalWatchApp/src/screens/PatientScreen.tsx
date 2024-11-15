@@ -1,6 +1,6 @@
 // src/screens/PatientScreen.tsx
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { getPatients } from '../slices/patientSlice'; // Updated import
 import { fetchPregnancies } from '../slices/PregnancySlice'; // Import fetchPregnancies
@@ -28,7 +28,11 @@ const PatientScreen = () => {
                     keyExtractor={(item) => item._id}
                     renderItem={({ item }) => (
                         <View style={styles.item}>
-                            <Text>{item.firstName} {item.lastName}</Text> {/* Updated to match patient data */}
+                            <Text>{item.firstName} {item.lastName}</Text>
+                            {/* <Image
+                                source={{ uri: item.profileImage }}
+                                style={styles.profileImage}
+                            /> */}
                             <Text>{item.age} years old</Text>
                             {/* Display pregnancies for each patient */}
                             <FlatList
@@ -59,6 +63,11 @@ const styles = StyleSheet.create({
     error: {
         color: 'red',
         marginBottom: 10,
+    },
+    profileImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
     },
 });
 

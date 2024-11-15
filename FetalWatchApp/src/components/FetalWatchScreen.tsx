@@ -33,7 +33,7 @@ const FetalWatchScreen = ({ route, navigation }: { route: any, navigation: any }
             try {
                 await Asset.loadAsync([
                     require('../assets/fetal-video.mp4'),
-                    require('../assets/fetal-img.jpg'),
+                    require('../assets/fetal-img.png'),
                 ]);
                 console.log('Assets preloaded successfully');
             } catch (error) {
@@ -158,11 +158,11 @@ const FetalWatchScreen = ({ route, navigation }: { route: any, navigation: any }
                     <Text style={styles.dataText}>Position: {fetalData.position}</Text>
 
                     <Text style={styles.sectionTitle}>Scan Image</Text>
-                    <Image
+                    {/* <Image
                         source={require('../assets/fetal-img.png')}
                         style={styles.image}
                         resizeMode="contain"
-                    />
+                    /> */}
                 </View>
             )}
             {/* console.log('Rendering, scanCompleted:', scanCompleted) */}

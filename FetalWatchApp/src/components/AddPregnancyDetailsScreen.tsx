@@ -19,7 +19,7 @@ const AddPregnancyDetailsScreen = ({ route, navigation }: any) => {
 
     const handleSubmit = () => {
         const newPregnancy = {
-            patient,
+            patientId: patient._id,
             gestationalAge: parseInt(gestationalAge),
             expectedDeliveryDate: new Date(expectedDeliveryDate),
             prenatalCare: {

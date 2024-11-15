@@ -4,6 +4,7 @@ import fetalWatchReducer from '../slices/fetalWatchSlice';
 import loginReducer from '../slices/loginSlice';
 import homeReducer from '../slices/homeSlice';
 import patientReducer from '../slices/patientSlice';
+import pregnancyReducer from '../slices/PregnancySlice';
 
 export const store = configureStore({
     reducer: {
@@ -11,6 +12,7 @@ export const store = configureStore({
         fetalWatch: fetalWatchReducer,
         home: homeReducer,
         patients: patientReducer,
+        pregnancies: pregnancyReducer,
     },
 });
 

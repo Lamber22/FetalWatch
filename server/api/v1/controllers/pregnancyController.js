@@ -52,19 +52,23 @@ export const createPregnancy = async (req, res) => {
         }
 
         // Create and save the new Pregnancy document
-        const pregnancy = new Pregnancy(req.body);
-        await pregnancy.save();
+        const pregnancy = new Pregnancy({ ...req.body, patientId: req.body.patientId });
+        const savedPregnancy = await pregnancy.save();
+
+        if (!savedPregnancy) {
+            return res.status(500).json({ status: "error", message: "Failed to create pregnancy" });
+        }
 
         // Update the Patient document to include this new Pregnancy
         await Patient.findByIdAndUpdate(
             req.body.patientId,
-            { $push: { pregnancies: pregnancy._id } }
+            { $push: { pregnancies: savedPregnancy._id } }
         );
 
         res.status(201).json({
             status: "success",
             message: "Pregnancy created and patient updated successfully",
-            data: pregnancy
+            data: savedPregnancy
         });
     } catch (error) {
         res.status(400).json({ status: "error", message: error.message });
@@ -85,6 +89,21 @@ export const getPregnancies = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({status: "failed", error: error.message });
+    }
+};
+
+// Get pregnancies by patient ID
+export const getPregnanciesByPatientId = async (req, res) => {
+    try {
+        const pregnancies = await Pregnancy.find({ patientId: req.params.patientId }).populate('patientId');
+        if (pregnancies.length === 0) return res.json({ message: "No pregnancy data found for this patient" });
+        res.status(200).json({
+            status: "success",
+            numPregnancies: pregnancies.length,
+            data: pregnancies
+        });
+    } catch (error) {
+        res.status(500).json({ status: "failed", error: error.message });
     }
 };
 
