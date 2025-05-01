@@ -1,261 +1,363 @@
 import React, { useState } from 'react';
+import { View, ScrollView, StyleSheet, Platform } from 'react-native';
 import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    ScrollView,
-    StyleSheet,
-    Modal,
-    Platform,
-} from 'react-native';
+  Appbar,
+  TextInput,
+  Button,
+  Surface,
+  HelperText,
+  useTheme,
+  Snackbar,
+  Portal,
+  Dialog,
+  Divider,
+  Text,
+  RadioButton,
+} from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
+import { useDispatch } from 'react-redux';
+import { createPatient } from '../slices/patientSlice';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { globalStyles } from '../theme';
 
-const FloatingLabelInput = ({ label, value, onChange, onFocus, onBlur }: any) => {
-    const [isFocused, setIsFocused] = useState(false);
+type AddPatientScreenNavigationProp = StackNavigationProp<RootStackParamList, 'AddPatient'>;
 
-    return (
-        <View style={styles.floatingLabelContainer}>
-            <Text style={[styles.floatingLabel, isFocused || value ? styles.floatingLabelFocused : {}]}>
-                {label}
-            </Text>
-            <TextInput
-                style={[styles.input, isFocused || value ? styles.inputWithLabel : {}]}
-                value={value}
-                onChangeText={onChange}
-                onFocus={() => {
-                    setIsFocused(true);
-                    if (onFocus) onFocus();
-                }}
-                onBlur={() => {
-                    setIsFocused(false);
-                    if (onBlur) onBlur();
-                }}
-                placeholderTextColor="#aaa"
+interface Props {
+  navigation: AddPatientScreenNavigationProp;
+}
+
+interface FormErrors {
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  phoneNumber?: string;
+  address?: string;
+}
+
+const AddPatientScreen: React.FC<Props> = ({ navigation }) => {
+  const theme = useTheme();
+  const dispatch = useDispatch();
+
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    dateOfBirth: '',
+    age: '',
+    gender: '',
+    phoneNumber: '',
+    address: '',
+  });
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [confirmDialogVisible, setConfirmDialogVisible] = useState(false);
+
+  const calculateAge = (dob: string) => {
+    if (!dob) return '';
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
+    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age.toString();
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      setFormData({
+        ...formData,
+        dateOfBirth: formattedDate,
+        age: calculateAge(formattedDate),
+      });
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = 'Date of birth is required';
+    }
+    if (!formData.gender) {
+      newErrors.gender = 'Gender is required';
+    }
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(formData.phoneNumber.trim())) {
+      newErrors.phoneNumber = 'Please enter a valid 10-digit phone number';
+    }
+    if (!formData.address.trim()) {
+      newErrors.address = 'Address is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (validateForm()) {
+      setConfirmDialogVisible(true);
+    } else {
+      setSnackbarMessage('Please fix the errors in the form');
+      setSnackbarVisible(true);
+    }
+  };
+
+  const confirmSubmit = async () => {
+    setConfirmDialogVisible(false);
+    setLoading(true);
+
+    try {
+      const patientData = {
+        ...formData,
+        age: parseInt(formData.age),
+      };
+      const result = await dispatch(createPatient(patientData)).unwrap();
+      setSnackbarMessage('Patient added successfully');
+      setSnackbarVisible(true);
+      setTimeout(() => {
+        navigation.navigate('PatientDetail', { id: result._id });
+      }, 1000);
+    } catch (error) {
+      setSnackbarMessage('Failed to add patient. Please try again.');
+      setSnackbarVisible(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <View style={globalStyles.container}>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => navigation.goBack()} />
+        <Appbar.Content title="Add New Patient" />
+      </Appbar.Header>
+
+      <ScrollView style={styles.content}>
+        <Surface style={styles.formContainer}>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Personal Information</Text>
+
+          <TextInput
+            label="First Name"
+            value={formData.firstName}
+            onChangeText={(text) => setFormData({ ...formData, firstName: text })}
+            error={!!errors.firstName}
+            style={styles.input}
+            mode="outlined"
+          />
+          <HelperText type="error" visible={!!errors.firstName}>
+            {errors.firstName}
+          </HelperText>
+
+          <TextInput
+            label="Last Name"
+            value={formData.lastName}
+            onChangeText={(text) => setFormData({ ...formData, lastName: text })}
+            error={!!errors.lastName}
+            style={styles.input}
+            mode="outlined"
+          />
+          <HelperText type="error" visible={!!errors.lastName}>
+            {errors.lastName}
+          </HelperText>
+
+          <TextInput
+            label="Date of Birth"
+            value={formData.dateOfBirth}
+            error={!!errors.dateOfBirth}
+            style={styles.input}
+            mode="outlined"
+            right={<TextInput.Icon icon="calendar" onPress={() => setShowDatePicker(true)} />}
+            showSoftInputOnFocus={false}
+            onPressIn={() => setShowDatePicker(true)}
+          />
+          <HelperText type="error" visible={!!errors.dateOfBirth}>
+            {errors.dateOfBirth}
+          </HelperText>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={formData.dateOfBirth ? new Date(formData.dateOfBirth) : new Date()}
+              mode="date"
+              display="default"
+              onChange={onDateChange}
+              maximumDate={new Date()}
             />
-        </View>
-    );
-};
+          )}
 
-const AddPatientScreen = ({ navigation, route }: any) => {
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [dateOfBirth, setDateOfBirth] = useState('');
-    const [age, setAge] = useState('');
-    const [gender, setGender] = useState('');
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
-    const [showErrorModal, setShowErrorModal] = useState(false);
+          <TextInput
+            label="Age"
+            value={formData.age}
+            editable={false}
+            style={styles.input}
+            mode="outlined"
+          />
 
-    const calculateAge = (dob: string) => {
-        const birthDate = new Date(dob);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDifference = today.getMonth() - birthDate.getMonth();
-        if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
-        return age;
-    };
+          <Text variant="bodyMedium" style={styles.radioLabel}>Gender</Text>
+          <RadioButton.Group
+            value={formData.gender}
+            onValueChange={(value) => setFormData({ ...formData, gender: value })}
+          >
+            <View style={styles.radioRow}>
+              <View style={styles.radioItem}>
+                <RadioButton value="female" />
+                <Text>Female</Text>
+              </View>
+              <View style={styles.radioItem}>
+                <RadioButton value="male" />
+                <Text>Male</Text>
+              </View>
+              <View style={styles.radioItem}>
+                <RadioButton value="other" />
+                <Text>Other</Text>
+              </View>
+            </View>
+          </RadioButton.Group>
+          <HelperText type="error" visible={!!errors.gender}>
+            {errors.gender}
+          </HelperText>
 
-    const onDateChange = (event: any, selectedDate?: Date) => {
-        setShowDatePicker(Platform.OS === 'ios');
-        if (selectedDate) {
-            const formattedDate = selectedDate.toISOString().split('T')[0];
-            setDateOfBirth(formattedDate);
-            setAge(calculateAge(formattedDate).toString());
-        }
-    };
+          <Divider style={styles.divider} />
+          <Text variant="titleMedium" style={styles.sectionTitle}>Contact Information</Text>
 
-    const handleSubmit = () => {
-        if (!firstName || !lastName || !dateOfBirth || !gender) {
-            setErrorMessage('Please fill in all required fields.');
-            setShowErrorModal(true);
-            return;
-        }
+          <TextInput
+            label="Phone Number"
+            value={formData.phoneNumber}
+            onChangeText={(text) => setFormData({ ...formData, phoneNumber: text })}
+            error={!!errors.phoneNumber}
+            style={styles.input}
+            mode="outlined"
+            keyboardType="phone-pad"
+          />
+          <HelperText type="error" visible={!!errors.phoneNumber}>
+            {errors.phoneNumber}
+          </HelperText>
 
-        const newPatient = {
-            firstName,
-            lastName,
-            dateOfBirth,
-            age: parseInt(age),
-            gender,
-        };
+          <TextInput
+            label="Address"
+            value={formData.address}
+            onChangeText={(text) => setFormData({ ...formData, address: text })}
+            error={!!errors.address}
+            style={styles.input}
+            mode="outlined"
+            multiline
+            numberOfLines={3}
+          />
+          <HelperText type="error" visible={!!errors.address}>
+            {errors.address}
+          </HelperText>
+        </Surface>
+      </ScrollView>
 
-        if (route.params && route.params.onSubmit) {
-            route.params.onSubmit(newPatient);
-            navigation.navigate('PatientDetails', { patient: newPatient });
-        } else {
-            setErrorMessage('An error occurred while submitting the form.');
-            setShowErrorModal(true);
-        }
-    };
+      <Surface style={styles.buttonContainer}>
+        <Button
+          mode="contained"
+          onPress={handleSubmit}
+          loading={loading}
+          disabled={loading}
+          style={styles.submitButton}
+        >
+          Add Patient
+        </Button>
+      </Surface>
 
-    return (
-        <View style={{ flex: 1, backgroundColor: '#f9f9f9' }}>
-            <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{
-                    flexGrow: 1,
-                    padding: 20,
-                }}
-            >
-                <Text style={styles.title}>Add New Patient</Text>
+      <Portal>
+        <Dialog visible={confirmDialogVisible} onDismiss={() => setConfirmDialogVisible(false)}>
+          <Dialog.Title>
+            Confirm New Patient
+          </Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">Are you sure you want to add this patient?</Text>
+            <Text variant="bodyMedium" style={styles.summaryText}>
+              {`Name: ${formData.firstName} ${formData.lastName}\n`}
+              {`Date of Birth: ${formData.dateOfBirth}\n`}
+              {`Age: ${formData.age}\n`}
+              {`Gender: ${formData.gender}\n`}
+              {`Phone: ${formData.phoneNumber}`}
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setConfirmDialogVisible(false)}>Cancel</Button>
+            <Button onPress={confirmSubmit} mode="contained">Confirm</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
 
-                <Modal
-                    transparent={true}
-                    visible={showErrorModal}
-                    animationType="slide"
-                    onRequestClose={() => setShowErrorModal(false)}
-                >
-                    <View style={styles.modalContainer}>
-                        <View style={styles.modalContent}>
-                            <Text style={styles.modalText}>{errorMessage}</Text>
-                            <TouchableOpacity
-                                style={styles.modalButton}
-                                onPress={() => setShowErrorModal(false)}
-                            >
-                                <Text style={styles.modalButtonText}>OK</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </Modal>
-
-                <FloatingLabelInput label="First Name" value={firstName} onChange={setFirstName} />
-                <FloatingLabelInput label="Last Name" value={lastName} onChange={setLastName} />
-
-                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                    <FloatingLabelInput
-                        label="Date of Birth (YYYY-MM-DD)"
-                        value={dateOfBirth}
-                        onChange={() => {}}
-                        onFocus={() => setShowDatePicker(true)}
-                    />
-                </TouchableOpacity>
-                {showDatePicker && (
-                    <DateTimePicker
-                        value={new Date()}
-                        mode="date"
-                        display="default"
-                        onChange={onDateChange}
-                    />
-                )}
-
-                <FloatingLabelInput label="Age" value={age} onChange={setAge} keyboardType="numeric" />
-
-                <View style={styles.pickerContainer}>
-                    <Picker
-                        selectedValue={gender}
-                        onValueChange={(itemValue) => setGender(itemValue)}
-                        style={styles.picker}
-                    >
-                        <Picker.Item label="Select Gender" value="" />
-                        <Picker.Item label="Female" value="female" />
-                        <Picker.Item label="Male" value="male" />
-                        <Picker.Item label="Other" value="other" />
-                    </Picker>
-                </View>
-
-                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                    <Text style={styles.submitButtonText}>Submit</Text>
-                </TouchableOpacity>
-            </ScrollView>
-        </View>
-    );
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+        action={{
+          label: 'Close',
+          onPress: () => setSnackbarVisible(false),
+        }}
+      >
+        {snackbarMessage}
+      </Snackbar>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        textAlign: 'center',
-    },
-    floatingLabelContainer: {
-        marginBottom: 15,
-        position: 'relative',
-    },
-    floatingLabel: {
-        position: 'absolute',
-        left: 10,
-        top: 10,
-        fontSize: 16,
-        color: '#aaa',
-        backgroundColor: '#f9f9f9',
-        paddingHorizontal: 4,
-        zIndex: 1,
-    },
-    floatingLabelFocused: {
-        fontSize: 12,
-        top: -4,
-        color: '#d368e4',
-    },
-    input: {
-        height: 40,
-        borderColor: '#ddd',
-        borderWidth: 1,
-        borderRadius: 5,
-        paddingHorizontal: 10,
-        backgroundColor: '#fff',
-    },
-    inputWithLabel: {
-        marginTop: 20,
-    },
-    pickerContainer: {
-        marginBottom: 15,
-        borderColor: '#ddd',
-        borderWidth: 1,
-        borderRadius: 5,
-        overflow: 'hidden',
-    },
-    picker: {
-        height: 40,
-        width: '100%',
-    },
-    datePickerButton: {
-        marginBottom: 15,
-    },
-    submitButton: {
-        backgroundColor: '#d368e4',
-        padding: 15,
-        borderRadius: 5,
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    submitButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalContent: {
-        width: 300,
-        padding: 20,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        alignItems: 'center',
-    },
-    modalText: {
-        fontSize: 16,
-        marginBottom: 20,
-        textAlign: 'center',
-    },
-    modalButton: {
-        backgroundColor: '#d368e4',
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-    },
-    modalButtonText: {
-        color: 'white',
-        fontSize: 16,
-    },
+  content: {
+    flex: 1,
+  },
+  formContainer: {
+    margin: 16,
+    padding: 16,
+    borderRadius: 8,
+  },
+  sectionTitle: {
+    marginBottom: 16,
+  },
+  input: {
+    marginBottom: 4,
+  },
+  radioLabel: {
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  radioItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  divider: {
+    marginVertical: 16,
+  },
+  buttonContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  submitButton: {
+    marginTop: 8,
+  },
+  summaryText: {
+    marginTop: 16,
+    lineHeight: 20,
+  },
 });
 
 export default AddPatientScreen;
+
