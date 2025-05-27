@@ -18,10 +18,10 @@ const PatientSchema = new Schema({
     gender: {
         type: String, required: true
     },
-    address: { type: String, required: true
-    },
+  
     contactInformation: {
         phone: { type: String, required: true },
+          address: { type: String, required: true },
         email: { type: String }
     },
     emergencyContact: {

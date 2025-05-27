@@ -13,7 +13,7 @@ export const createPatient = async (req, res) => {
         // Validate required fields
         const {
             firstName, lastName, dateOfBirth, age, gender,
-            address, contactInformation, emergencyContact, medicalHistory
+            address, contactInformation
         } = req.body;
 
         if (!firstName ||
@@ -22,8 +22,7 @@ export const createPatient = async (req, res) => {
             !age ||
             !gender ||
             !address ||
-            !contactInformation ||
-            !emergencyContact) {
+            !contactInformation) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
@@ -69,7 +68,7 @@ export const updatePatient = async (req, res) => {
     try {
         const {
             firstName, lastName, dateOfBirth, age, gender,
-            address, contactInformation, emergencyContact, medicalHistory
+            address, contactInformation
         } = req.body;
 
         const patient = await Patient.findByIdAndUpdate(req.params.patientId, req.body, { new: true });
