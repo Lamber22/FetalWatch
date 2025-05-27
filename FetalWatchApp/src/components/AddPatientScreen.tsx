@@ -222,10 +222,10 @@ const AddPatientScreen: React.FC<Props> = ({ navigation }) => {
                 <RadioButton value="male" />
                 <Text>Male</Text>
               </View>
-              <View style={styles.radioItem}>
+              {/*<View style={styles.radioItem}>
                 <RadioButton value="other" />
                 <Text>Other</Text>
-              </View>
+              </View>*/}
             </View>
           </RadioButton.Group>
           <HelperText type="error" visible={!!errors.gender}>
