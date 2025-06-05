@@ -15,7 +15,9 @@ const app = express();
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors({
-    origin: '*', // Allow all origins for testing purposes
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.get("/api/v1/", (req, res) => {

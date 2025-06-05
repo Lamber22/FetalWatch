@@ -11,15 +11,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import { useTheme } from '../../context/ThemeContext';
-import { useUser } from '../../context/UserContext';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { Colors } from '@/constants/Colors';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const { user, loading } = useUser();
-  const colorScheme = useColorScheme();
 
   const stats = [
     { title: 'Total Patients', value: '156', icon: 'people' },
@@ -61,16 +55,13 @@ export default function HomeScreen() {
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
         <View style={styles.headerContent}>
           <View>
-            <Text style={[styles.welcomeText, { color: colors.white }]}>
-              Welcome back,
-            </Text>
-            <Text style={[styles.nameText, { color: colors.white }]}>
-              {loading ? 'Loading...' : user ? `${user.firstName} ${user.lastName}` : 'User'}
-            </Text>
+            <Text style={styles.welcomeText}>Welcome Back,</Text>
+            <Text style={styles.doctorName}>Dr. Sarah Wilson</Text>
           </View>
           <TouchableOpacity
             style={[styles.notificationButton, { backgroundColor: colors.white }]}
-            onPress={() => router.push('/(tabs)/notifications')}>
+            onPress={() => console.log('Notifications')}
+          >
             <Ionicons name="notifications-outline" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
@@ -184,7 +175,7 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     opacity: 0.8,
   },
-  nameText: {
+  doctorName: {
     fontSize: SIZES.extraLarge,
     fontWeight: 'bold',
     color: COLORS.white,
@@ -225,22 +216,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     padding: SIZES.padding,
-    gap: SIZES.base,
   },
   statCard: {
-    width: '48%',
+    width: '45%',
+    margin: '2.5%',
     padding: SIZES.padding,
     borderRadius: SIZES.radius,
+    alignItems: 'center',
     ...SHADOWS.light,
   },
   statValue: {
-    fontSize: SIZES.large,
+    fontSize: SIZES.extraLarge,
     fontWeight: 'bold',
-    marginTop: SIZES.base,
+    marginVertical: SIZES.base,
   },
   statTitle: {
     fontSize: SIZES.small,
-    marginTop: SIZES.base / 2,
+    textAlign: 'center',
   },
   section: {
     padding: SIZES.padding,
@@ -256,8 +248,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   seeAll: {
-    fontSize: SIZES.small,
-    fontWeight: '500',
+    fontSize: SIZES.medium,
   },
   patientCard: {
     flexDirection: 'row',
@@ -274,10 +265,10 @@ const styles = StyleSheet.create({
   patientName: {
     fontSize: SIZES.medium,
     fontWeight: '500',
+    marginBottom: SIZES.base / 2,
   },
   patientDetails: {
     fontSize: SIZES.small,
-    marginTop: SIZES.base / 2,
   },
   patientStatus: {
     alignItems: 'flex-end',
@@ -286,6 +277,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SIZES.base,
     paddingVertical: SIZES.base / 2,
     borderRadius: SIZES.radius,
+    marginBottom: SIZES.base / 2,
   },
   riskText: {
     color: COLORS.white,
@@ -294,6 +286,5 @@ const styles = StyleSheet.create({
   },
   lastVisit: {
     fontSize: SIZES.small,
-    marginTop: SIZES.base / 2,
   },
-});
+}); 

@@ -5,12 +5,14 @@ import {
     getUserById,
     getUsersByRole,
     updateUser,
-    deleteUser
+    deleteUser,
+    getCurrentUser
 } from "../controllers/userController.js";
 
 const router = Router();
 
 router.get("/", getUsers);
+router.get("/current", getCurrentUser);
 router.get("/:userId", getUserById);
 router.get("/role:role", getUsersByRole);
 router.put("/:userId", updateUser);

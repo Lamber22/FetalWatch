@@ -146,3 +146,31 @@ export const deleteUser = async (req, res) => {
         .json({ error: "Server error", errorMessage: error.message });
     }
 };
+
+// Get current user
+export const getCurrentUser = async (req, res) => {
+    try {
+        // The user ID should be available in req.user from the auth middleware
+        const userId = req.user.id;
+        const user = await User.findById(userId).select('-password');
+        
+        if (!user) {
+            return res.status(404).json({ 
+                status: 'fail', 
+                message: 'User not found' 
+            });
+        }
+
+        res.status(200).json({
+            status: 'success',
+            data: user
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            status: 'error',
+            message: 'Server error',
+            error: error.message 
+        });
+    }
+};

@@ -33,17 +33,20 @@ export const signUp = async (req, res) => {
 //user authentication handler
 export const signIn = async (req, res) => {
     const { email, password } = req.body;
+    console.log('Sign in attempt:', { email, password: password ? '****' : 'not provided' });
     try {
         const user = await User.findOne({ email }).exec();
+        console.log('User found:', user ? 'yes' : 'no');
         if (!user) return res.status(401).json({
             status: "bad request",
             message: "invalid email"
         });
 
         const validUser = await user.matchPassword(password);
+        console.log('Password match:', validUser ? 'yes' : 'no');
         if (!validUser) return res.status(401).json({
             status: "failed",
-            message: "invilid password"
+            message: "invalid password"
         });
         res.status(200).json({
             status: "success",
@@ -51,6 +54,7 @@ export const signIn = async (req, res) => {
             token: generateToken(user.id, user.role),
         })
     }catch (error) {
+        console.error('Sign in error:', error);
         res.status(500).json({ status: "failed", errorMessage: error.message });
     }
 };
