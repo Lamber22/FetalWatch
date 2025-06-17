@@ -1,78 +1,75 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import { useColorScheme } from 'react-native';
-import { COLORS } from '../constants/theme';
-import { ThemeProvider } from '../context/ThemeContext';
-import { UserProvider } from '../context/UserContext';
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback } from 'react';
-import { View } from 'react-native';
-import { usePathname } from 'expo-router';
+import { useEffect } from 'react';
+import { useColorScheme } from 'react-native';
+import { ErrorBoundary } from 'react-error-boundary';
+import { ThemeProvider as CustomThemeProvider } from '../contexts/ThemeContext';
+import { AuthProvider } from '../contexts/AuthContext';
+import { PatientsProvider } from '../contexts/PatientsContext';
 
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync().catch(() => {
-  /* reloading the app might trigger some race conditions, ignore them */
-});
+export {
+  ErrorBoundary,
+} from 'expo-router';
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [loaded, error] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    ...FontAwesome.font,
+  });
+
+  useEffect(() => {
+    if (error) throw error;
+  }, [error]);
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
+
+  return <RootLayoutNav />;
+}
+
+export const unstable_settings = {
+  initialRouteName: '(auth)',
+};
+
+function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const pathname = usePathname();
-  
-  // Define paths where the tab bar should be hidden
-  const hideTabBarPaths = [
-    '/patients/add',
-    '/patients/[id]',
-    '/calendar/add',
-    '/calendar/[id]',
-    '/reports/[id]',
-    '/profile/personal',
-    '/profile/notifications',
-    '/profile/security',
-    '/profile/support',
-    '/profile/about',
-  ];
-
-  const shouldShowTabBar = !hideTabBarPaths.some(path => pathname.startsWith(path));
-
-  const onLayoutRootView = useCallback(async () => {
-    await SplashScreen.hideAsync();
-  }, []);
 
   return (
-    <ThemeProvider>
-      <UserProvider>
-        <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-          <Stack
-            screenOptions={{
-              headerStyle: {
-                backgroundColor: COLORS.primary,
-              },
-              headerTintColor: COLORS.white,
-              headerTitleStyle: {
-                fontWeight: 'bold',
-              },
-              contentStyle: {
-                backgroundColor: COLORS.background,
-              },
-              tabBarStyle: {
-                display: shouldShowTabBar ? 'flex' : 'none',
-              },
-            }}
-          >
-            <Stack.Screen
-              name="(auth)"
-              options={{
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen
-              name="(app)"
-              options={{
-                headerShown: false,
-              }}
-            />
-          </Stack>
-        </View>
-      </UserProvider>
-    </ThemeProvider>
+    <ErrorBoundary fallback={<ErrorFallback />}>
+      <CustomThemeProvider>
+        <AuthProvider>
+          <PatientsProvider>
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                }}
+              >
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+              </Stack>
+            </ThemeProvider>
+          </PatientsProvider>
+        </AuthProvider>
+      </CustomThemeProvider>
+    </ErrorBoundary>
   );
 }
+
+function ErrorFallback() {
+  return null;
+}
+

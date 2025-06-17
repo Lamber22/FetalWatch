@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../constants/theme';
+import { COLORS } from '../../components/constants/Theme';
 
 export default function AppLayout() {
   return (
@@ -23,7 +23,7 @@ export default function AppLayout() {
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="index"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
@@ -32,7 +32,7 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
-        name="patients"
+        name="Patients"
         options={{
           title: 'Patients',
           tabBarIcon: ({ color, size }) => (
@@ -41,7 +41,7 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
-        name="calendar"
+        name="Appointment"
         options={{
           title: 'Calendar',
           tabBarIcon: ({ color, size }) => (
@@ -50,7 +50,7 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
-        name="reports"
+        name="Reports"
         options={{
           title: 'Reports',
           tabBarIcon: ({ color, size }) => (
@@ -59,7 +59,7 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="Profile"
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
@@ -69,4 +69,4 @@ export default function AppLayout() {
       />
     </Tabs>
   );
-} 
+}

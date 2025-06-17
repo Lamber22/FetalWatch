@@ -3,57 +3,53 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const PatientSchema = new Schema({
-    firstName: {
-        type: String, required: true
+    name: {
+        type: String,
+        required: true
     },
-    lastName: {
-        type: String, required: true
-    },
-    dateOfBirth: { type: Date, required: true
-    },
-    age: {
-        type: Number,
+    dateOfBirth: {
+        type: Date,
         required: true
     },
     gender: {
-        type: String, required: true
+        type: String,
+        required: true,
+        enum: ['Male', 'Female', 'Other']
     },
-    address: { type: String, required: true
+    address: {
+        type: String,
+        required: true
     },
-    contactInformation: {
-        phone: { type: String, required: true },
-        email: { type: String }
+    contact: {
+        type: String,
+        required: true
     },
-    emergencyContact: {
-        name: { type: String, required: true },
-        phone: { type: String, required: true }
+    weekOfPregnancy: {
+        type: Number
     },
-    medicalHistory: {
-        chronicIllnesses: [String],
-        allergies: [String],
-        previousPregnancies: {
-        number: Number,
-        outcomes: [String],
-        complications: [String]
-        },
-        obstetricHistory: {
-        gravida: Number,
-        para: Number,
-        abortions: Number
-        },
-        contraceptionHistory: String,
-        surgicalHistory: [String],
-        currentMedications: [String]
+    expectedDeliveryDate: {
+        type: Date
     },
     pregnancies: [{
         type: Schema.Types.ObjectId,
         ref: 'Pregnancy'
     }],
-    createdAt: { type: Date, default: Date.now
+    createdAt: {
+        type: Date,
+        default: Date.now
     },
-    updatedAt: { type: Date, default: Date.now
+    updatedAt: {
+        type: Date,
+        default: Date.now
     }
+});
+
+// Update timestamp before saving
+PatientSchema.pre('save', function(next) {
+    this.updatedAt = new Date();
+    next();
 });
 
 const Patient = mongoose.model('Patient', PatientSchema);
 export default Patient;
+

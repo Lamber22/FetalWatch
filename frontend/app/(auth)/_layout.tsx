@@ -1,34 +1,27 @@
 import { Stack } from 'expo-router';
-import { COLORS } from '../../constants/theme';
+import { COLORS } from '../../components/constants/Theme';
 
 export default function AuthLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: {
-          backgroundColor: COLORS.primary,
-        },
-        headerTintColor: COLORS.white,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        contentStyle: {
-          backgroundColor: COLORS.background,
-        },
+        headerShown: false,
+        contentStyle: { backgroundColor: COLORS.white },
+        animation: 'slide_from_right',
       }}
     >
       <Stack.Screen
-        name="login"
+        name="Login"
         options={{
-          title: 'Login',
+          headerShown: false,
         }}
       />
       <Stack.Screen
-        name="register"
+        name="Register"
         options={{
-          title: 'Registration',
+          headerShown: false,
         }}
       />
     </Stack>
   );
-} 
+}

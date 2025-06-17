@@ -1,39 +1,33 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
-import { useTheme } from '../../context/ThemeContext';
+import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { usePatients } from '../../contexts/PatientsContext';
+import Modal from '../../components/ui/Modal';
+import AddPatient from '../../components/forms/AddPatient';
 
 export default function PatientsScreen() {
   const { colors } = useTheme();
+  const { patients, loading, error, fetchPatients } = usePatients();
+  const [showAddPatientModal, setShowAddPatientModal] = useState(false);
 
-  const patients = [
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      age: 28,
-      weeks: 24,
-      risk: 'Low',
-      lastVisit: '2 days ago',
-    },
-    {
-      id: '2',
-      name: 'Emily Davis',
-      age: 32,
-      weeks: 36,
-      risk: 'High',
-      lastVisit: '1 day ago',
-    },
-    {
-      id: '3',
-      name: 'Maria Garcia',
-      age: 25,
-      weeks: 18,
-      risk: 'Low',
-      lastVisit: '3 days ago',
-    },
-  ];
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
+  const calculateAge = (dateOfBirth?: string) => {
+    if (!dateOfBirth) return 'N/A';
+    const birth = new Date(dateOfBirth);
+    const today = new Date();
+    return Math.floor((today.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+  };
+
+  const getRiskLevel = (weekOfPregnancy?: number) => {
+    if (!weekOfPregnancy) return 'Unknown';
+    return weekOfPregnancy < 20 || weekOfPregnancy > 35 ? 'High' : 'Low';
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -41,44 +35,87 @@ export default function PatientsScreen() {
         <Text style={styles.headerTitle}>Patients</Text>
         <TouchableOpacity
           style={[styles.addButton, { backgroundColor: colors.white }]}
-          onPress={() => router.push('/patients/add')}
+          onPress={() => setShowAddPatientModal(true)}
         >
           <Ionicons name="add" size={24} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
-        {patients.map((patient) => (
-          <TouchableOpacity
-            key={patient.id}
-            style={[styles.patientCard, { backgroundColor: colors.white }]}
-            onPress={() => router.push(`/patients/${patient.id}`)}
-          >
-            <View style={styles.patientInfo}>
-              <Text style={[styles.patientName, { color: colors.text }]}>{patient.name}</Text>
-              <Text style={[styles.patientDetails, { color: colors.gray }]}>
-                {patient.age} years • {patient.weeks} weeks
-              </Text>
-            </View>
-            <View style={styles.patientStatus}>
-              <View
-                style={[
-                  styles.riskBadge,
-                  {
-                    backgroundColor:
-                      patient.risk === 'High' ? colors.error : colors.success,
-                  },
-                ]}
-              >
-                <Text style={styles.riskText}>{patient.risk} Risk</Text>
+        {loading && (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        )}
+        
+        {error && (
+          <View style={styles.centerContainer}>
+            <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+          </View>
+        )}
+
+        {!loading && !error && patients.map((patient) => {
+          const age = calculateAge(patient.dateOfBirth);
+          const risk = getRiskLevel(patient.weekOfPregnancy);
+          
+          return (
+            <TouchableOpacity
+              key={patient._id}
+              style={[styles.patientCard, { backgroundColor: colors.white }]}
+              onPress={() => router.push(`/patients/${patient._id}`)}
+            >
+              <View style={styles.patientInfo}>
+                <Text style={[styles.patientName, { color: colors.text }]}>{patient.name}</Text>
+                <Text style={[styles.patientDetails, { color: colors.gray }]}
+                >
+                  {age} years • {patient.weekOfPregnancy || 'N/A'} weeks
+                </Text>
               </View>
-              <Text style={[styles.lastVisit, { color: colors.gray }]}>
-                {patient.lastVisit}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+              <View style={styles.patientStatus}>
+                <View
+                  style={[
+                    styles.riskBadge,
+                    {
+                      backgroundColor:
+                        risk === 'High' ? colors.error : colors.success,
+                    },
+                  ]}
+                >
+                  <Text style={styles.riskText}>{risk} Risk</Text>
+                </View>
+                <Text style={[styles.lastVisit, { color: colors.gray }]}>
+                  Recent
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+
+        {!loading && !error && patients.length === 0 && (
+          <View style={styles.centerContainer}>
+            <Text style={[styles.emptyText, { color: colors.gray }]}>
+              No patients found. Add a new patient to get started.
+            </Text>
+          </View>
+        )}
       </ScrollView>
+
+      {/* Add Patient Modal */}
+      <Modal
+        visible={showAddPatientModal}
+        onClose={() => setShowAddPatientModal(false)}
+        title="Add New Patient"
+        size="large"
+        animationType="slide"
+      >
+        <AddPatient
+          onSuccess={() => {
+            setShowAddPatientModal(false);
+            fetchPatients(); // Refresh the patient list
+          }}
+          onCancel={() => setShowAddPatientModal(false)}
+        />
+      </Modal>
     </View>
   );
 }
@@ -148,4 +185,18 @@ const styles = StyleSheet.create({
     fontSize: SIZES.small,
     marginTop: SIZES.base / 2,
   },
-}); 
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.padding * 2,
+  },
+  errorText: {
+    fontSize: SIZES.medium,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: SIZES.medium,
+    textAlign: 'center',
+  },
+});

@@ -1,0 +1,306 @@
+import React, { useEffect, useRef } from 'react';
+import {
+  Modal as RNModal,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Animated,
+  Dimensions,
+  StatusBar,
+  Platform,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+interface ModalProps {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  size?: 'small' | 'medium' | 'large' | 'fullscreen';
+  showCloseButton?: boolean;
+  closeOnBackdropPress?: boolean;
+  animationType?: 'slide' | 'fade' | 'scale';
+}
+
+export default function Modal({
+  visible,
+  onClose,
+  title,
+  children,
+  size = 'medium',
+  showCloseButton = true,
+  closeOnBackdropPress = true,
+  animationType = 'scale',
+}: ModalProps) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(screenHeight)).current;
+  const scaleAnim = useRef(new Animated.Value(0.3)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      // Show modal with animation
+      if (animationType === 'slide') {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            tension: 65,
+            friction: 8,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      } else if (animationType === 'fade') {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      } else {
+        // Scale animation (default)
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+          Animated.spring(scaleAnim, {
+            toValue: 1,
+            tension: 80,
+            friction: 6,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    } else {
+      // Hide modal with animation
+      if (animationType === 'slide') {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: screenHeight,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      } else if (animationType === 'fade') {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      } else {
+        // Scale animation
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 0.3,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
+    }
+  }, [visible, animationType]);
+
+  const getModalStyle = () => {
+    const baseStyle = {
+      backgroundColor: COLORS.white,
+      borderRadius: size === 'fullscreen' ? 0 : SIZES.radius * 2,
+      ...SHADOWS.dark,
+    };
+
+    switch (size) {
+      case 'small':
+        return {
+          ...baseStyle,
+          width: Math.min(screenWidth * 0.8, 300),
+          maxHeight: screenHeight * 0.6,
+        };
+      case 'medium':
+        return {
+          ...baseStyle,
+          width: Math.min(screenWidth * 0.9, 400),
+          maxHeight: screenHeight * 0.8,
+        };
+      case 'large':
+        return {
+          ...baseStyle,
+          width: Math.min(screenWidth * 0.95, 500),
+          maxHeight: screenHeight * 0.9,
+        };
+      case 'fullscreen':
+        return {
+          ...baseStyle,
+          width: screenWidth,
+          height: screenHeight,
+          margin: 0,
+          borderRadius: 0,
+        };
+      default:
+        return {
+          ...baseStyle,
+          width: Math.min(screenWidth * 0.9, 400),
+          maxHeight: screenHeight * 0.8,
+        };
+    }
+  };
+
+  const getModalTransform = () => {
+    if (animationType === 'slide') {
+      return [{ translateY: slideAnim }];
+    } else if (animationType === 'fade') {
+      return [];
+    } else {
+      return [{ scale: scaleAnim }];
+    }
+  };
+
+  const getModalOpacity = () => {
+    if (animationType === 'fade') {
+      return opacityAnim;
+    }
+    return 1;
+  };
+
+  const handleBackdropPress = () => {
+    if (closeOnBackdropPress) {
+      onClose();
+    }
+  };
+
+  return (
+    <RNModal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={onClose}
+      statusBarTranslucent={Platform.OS === 'android'}
+    >
+      <TouchableWithoutFeedback onPress={handleBackdropPress}>
+        <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+          <StatusBar
+            backgroundColor="rgba(0, 0, 0, 0.5)"
+            barStyle="light-content"
+            translucent
+          />
+
+          <TouchableWithoutFeedback>
+            <Animated.View
+              style={[
+                styles.modalContainer,
+                getModalStyle(),
+                {
+                  transform: getModalTransform(),
+                  opacity: getModalOpacity(),
+                },
+              ]}
+            >
+              {/* Header */}
+              <View style={styles.header}>
+                <Text style={styles.title} numberOfLines={1}>
+                  {title}
+                </Text>
+                {showCloseButton && (
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={onClose}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="close" size={24} color={COLORS.gray} />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Content */}
+              <View style={styles.content}>{children}</View>
+            </Animated.View>
+          </TouchableWithoutFeedback>
+        </Animated.View>
+      </TouchableWithoutFeedback>
+    </RNModal>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.padding,
+  },
+  modalContainer: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.medium,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: SIZES.radius * 2,
+    borderTopRightRadius: SIZES.radius * 2,
+  },
+  title: {
+    fontSize: SIZES.large,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    flex: 1,
+    marginRight: SIZES.base,
+  },
+  closeButton: {
+    padding: SIZES.base / 2,
+    borderRadius: SIZES.radius,
+    backgroundColor: COLORS.lightGray,
+  },
+  content: {
+    backgroundColor: COLORS.white,
+    borderBottomLeftRadius: SIZES.radius * 2,
+    borderBottomRightRadius: SIZES.radius * 2,
+    padding: SIZES.padding,
+    maxHeight: '80%',
+  },
+});

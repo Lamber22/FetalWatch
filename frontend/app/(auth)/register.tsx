@@ -1,21 +1,20 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Alert,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Image,
-  Alert,
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
-import { authService } from '../../services/api/auth';
+import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,7 +25,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('healthProvider');
-  const [loading, setLoading] = useState(false);
+  const { signUp, loading, error, clearError } = useAuth();
 
   const handleRegister = async () => {
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
@@ -40,28 +39,12 @@ export default function RegisterScreen() {
     }
 
     try {
-      setLoading(true);
-      console.log('Attempting to register with:', { firstName, lastName, email });
-      const response = await authService.signUp({ firstName, lastName, email, password, role });
-      
-      if (response.token) {
-        await AsyncStorage.setItem('token', response.token);
-        router.replace('/(tabs)');
-      } else {
-        // If no token is returned, sign in the user to get the token
-        const signInResponse = await authService.signIn({ email, password });
-        await AsyncStorage.setItem('token', signInResponse.token);
-        router.replace('/(tabs)');
-      }
-    } catch (error: unknown) {
+      clearError();
+      await signUp(firstName, lastName, email, password, role);
+      router.replace('/(tabs)');
+    } catch (error) {
+      // Error is handled by context, but we can show an alert if needed
       console.error('Registration error:', error);
-      if (error instanceof Error) {
-        Alert.alert('Registration Failed', error.message);
-      } else {
-        Alert.alert('Registration Failed', 'An unexpected error occurred. Please try again.');
-      }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -88,6 +71,12 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.form}>
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>First Name</Text>
               <TextInput
@@ -164,14 +153,13 @@ export default function RegisterScreen() {
               )}
             </TouchableOpacity>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
-              <Link href="/(auth)/login" asChild>
-                <TouchableOpacity disabled={loading}>
-                  <Text style={styles.footerLink}>Sign In</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
+            <Link href="/(auth)/Login" asChild>
+              <TouchableOpacity style={styles.linkButton}>
+                <Text style={styles.linkText}>
+                  Already have an account? Sign In
+                </Text>
+              </TouchableOpacity>
+            </Link>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -223,6 +211,17 @@ const styles = StyleSheet.create({
   form: {
     width: '100%',
   },
+  errorContainer: {
+    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+    borderRadius: SIZES.radius,
+    padding: SIZES.small,
+    marginBottom: SIZES.medium,
+  },
+  errorText: {
+    color: COLORS.white,
+    fontSize: SIZES.small,
+    textAlign: 'center',
+  },
   inputContainer: {
     marginBottom: SIZES.medium,
   },
@@ -269,4 +268,13 @@ const styles = StyleSheet.create({
     fontSize: SIZES.medium,
     fontWeight: 'bold',
   },
-}); 
+  linkButton: {
+    marginTop: SIZES.medium,
+    alignItems: 'center',
+  },
+  linkText: {
+    color: COLORS.white,
+    fontSize: SIZES.medium,
+    textAlign: 'center',
+  },
+});

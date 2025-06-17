@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,50 +9,48 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
-import { useTheme } from '../../context/ThemeContext';
-import { useUser } from '../../context/UserContext';
+import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/components/constants/Colors';
+import { usePatients } from '../../contexts/PatientsContext';
+import Modal from '../../components/ui/Modal';
+import AddPatient from '../../components/forms/AddPatient';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const { user, loading } = useUser();
+  const { user, loading } = useAuth();
+  const { patients, loading: patientsLoading, fetchPatients } = usePatients();
   const colorScheme = useColorScheme();
+  const [showAddPatientModal, setShowAddPatientModal] = useState(false);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
+  const calculateAge = (dateOfBirth?: string) => {
+    if (!dateOfBirth) return 'N/A';
+    const birth = new Date(dateOfBirth);
+    const today = new Date();
+    return Math.floor((today.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+  };
+
+  const getRiskLevel = (weekOfPregnancy?: number) => {
+    if (!weekOfPregnancy) return 'Medium';
+    if (weekOfPregnancy < 20 || weekOfPregnancy > 35) return 'High';
+    return 'Low';
+  };
+
+  const highRiskPatients = patients.filter(p => getRiskLevel(p.weekOfPregnancy) === 'High').length;
+  const recentPatients = patients.slice(0, 3);
 
   const stats = [
-    { title: 'Total Patients', value: '156', icon: 'people' },
-    { title: 'Today\'s Appointments', value: '12', icon: 'calendar' },
-    { title: 'High Risk Cases', value: '8', icon: 'warning' },
-    { title: 'Completed Visits', value: '45', icon: 'checkmark-circle' },
-  ];
-
-  const recentPatients = [
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      age: 28,
-      weeks: 24,
-      risk: 'Low',
-      lastVisit: '2 days ago',
-    },
-    {
-      id: '2',
-      name: 'Emily Davis',
-      age: 32,
-      weeks: 36,
-      risk: 'High',
-      lastVisit: '1 day ago',
-    },
-    {
-      id: '3',
-      name: 'Maria Garcia',
-      age: 25,
-      weeks: 18,
-      risk: 'Low',
-      lastVisit: '3 days ago',
-    },
+    { title: 'Total Patients', value: patients.length.toString(), icon: 'people-outline' },
+    { title: 'Today\'s Appointments', value: '0', icon: 'calendar-outline' },
+    { title: 'High Risk Cases', value: highRiskPatients.toString(), icon: 'warning-outline' },
+    { title: 'Completed Visits', value: '0', icon: 'checkmark-circle-outline' },
   ];
 
   return (
@@ -65,12 +63,12 @@ export default function HomeScreen() {
               Welcome back,
             </Text>
             <Text style={[styles.nameText, { color: colors.white }]}>
-              {loading ? 'Loading...' : user ? `${user.firstName} ${user.lastName}` : 'User'}
+              {loading ? 'Loading...' : user ? `${user.firstName} ${user.lastName}` : 'Guest'}
             </Text>
           </View>
           <TouchableOpacity
             style={[styles.notificationButton, { backgroundColor: colors.white }]}
-            onPress={() => router.push('/(tabs)/notifications')}>
+            onPress={() => router.push('/notifications')}>
             <Ionicons name="notifications-outline" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
@@ -85,23 +83,23 @@ export default function HomeScreen() {
       <View style={styles.quickActions}>
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: colors.white }]}
-          onPress={() => router.push('/patients/add')}
+          onPress={() => setShowAddPatientModal(true)}
         >
-          <Ionicons name="person-add" size={24} color={colors.primary} />
+          <Ionicons name="person-add-outline" size={24} color={colors.primary} />
           <Text style={[styles.actionText, { color: colors.text }]}>Add Patient</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: colors.white }]}
-          onPress={() => router.push('/calendar/add')}
+          onPress={() => router.push('/(tabs)/Appointment')}
         >
-          <Ionicons name="calendar" size={24} color={colors.primary} />
+          <Ionicons name="calendar-outline" size={24} color={colors.primary} />
           <Text style={[styles.actionText, { color: colors.text }]}>Schedule</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: colors.white }]}
-          onPress={() => router.push('/reports')}
+          onPress={() => router.push('/(tabs)/Reports')}
         >
-          <Ionicons name="bar-chart" size={24} color={colors.primary} />
+          <Ionicons name="bar-chart-outline" size={24} color={colors.primary} />
           <Text style={[styles.actionText, { color: colors.text }]}>Reports</Text>
         </TouchableOpacity>
       </View>
@@ -124,41 +122,69 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Patients</Text>
-          <TouchableOpacity onPress={() => router.push('/patients')}>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/Patients')}>
             <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
           </TouchableOpacity>
         </View>
-        {recentPatients.map((patient) => (
-          <TouchableOpacity
-            key={patient.id}
-            style={[styles.patientCard, { backgroundColor: colors.white }]}
-            onPress={() => router.push(`/patients/${patient.id}`)}
-          >
-            <View style={styles.patientInfo}>
-              <Text style={[styles.patientName, { color: colors.text }]}>{patient.name}</Text>
-              <Text style={[styles.patientDetails, { color: colors.gray }]}>
-                {patient.age} years • {patient.weeks} weeks
-              </Text>
-            </View>
-            <View style={styles.patientStatus}>
-              <View
-                style={[
-                  styles.riskBadge,
-                  {
-                    backgroundColor:
-                      patient.risk === 'High' ? colors.error : colors.success,
-                  },
-                ]}
+        {patientsLoading ? (
+          <Text style={[styles.loadingText, { color: colors.gray }]}>Loading patients...</Text>
+        ) : recentPatients.length === 0 ? (
+          <Text style={[styles.emptyText, { color: colors.gray }]}>No patients yet</Text>
+        ) : (
+          recentPatients.map((patient) => {
+            const age = calculateAge(patient.dateOfBirth);
+            const risk = getRiskLevel(patient.weekOfPregnancy);
+            
+            return (
+              <TouchableOpacity
+                key={patient._id}
+                style={[styles.patientCard, { backgroundColor: colors.white }]}
+                onPress={() => router.push(`/(tabs)/Patients/${patient._id}`)}
               >
-                <Text style={styles.riskText}>{patient.risk} Risk</Text>
-              </View>
-              <Text style={[styles.lastVisit, { color: colors.gray }]}>
-                {patient.lastVisit}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+                <View style={styles.patientInfo}>
+                  <Text style={[styles.patientName, { color: colors.text }]}>{patient.name}</Text>
+                  <Text style={[styles.patientDetails, { color: colors.gray }]}>
+                    {age} years • {patient.weekOfPregnancy || 'N/A'} weeks
+                  </Text>
+                </View>
+                <View style={styles.patientStatus}>
+                  <View
+                    style={[
+                      styles.riskBadge,
+                      {
+                        backgroundColor:
+                          risk === 'High' ? colors.error : colors.success,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.riskText}>{risk} Risk</Text>
+                  </View>
+                  <Text style={[styles.lastVisit, { color: colors.gray }]}>
+                    Recent
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </View>
+
+      {/* Add Patient Modal */}
+      <Modal
+        visible={showAddPatientModal}
+        onClose={() => setShowAddPatientModal(false)}
+        title="Add New Patient"
+        size="large"
+        animationType="slide"
+      >
+        <AddPatient
+          onSuccess={() => {
+            setShowAddPatientModal(false);
+            fetchPatients(); // Refresh the patient list
+          }}
+          onCancel={() => setShowAddPatientModal(false)}
+        />
+      </Modal>
     </ScrollView>
   );
 }
@@ -295,5 +321,15 @@ const styles = StyleSheet.create({
   lastVisit: {
     fontSize: SIZES.small,
     marginTop: SIZES.base / 2,
+  },
+  loadingText: {
+    fontSize: SIZES.medium,
+    textAlign: 'center',
+    padding: SIZES.padding,
+  },
+  emptyText: {
+    fontSize: SIZES.medium,
+    textAlign: 'center',
+    padding: SIZES.padding,
   },
 });

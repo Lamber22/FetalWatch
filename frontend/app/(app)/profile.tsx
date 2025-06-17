@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useTheme } from '../../context/ThemeContext';
-import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
 
 export default function ProfileScreen() {
   const { theme, colors, toggleTheme } = useTheme();
@@ -47,7 +47,7 @@ export default function ProfileScreen() {
   ];
 
   const handleLogout = () => {
-    router.replace('/(auth)/login');
+    router.replace('/(auth)/Login');
   };
 
   return (

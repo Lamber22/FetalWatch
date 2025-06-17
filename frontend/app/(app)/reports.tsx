@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
 
 export default function ReportsScreen() {
   // Mock data - replace with actual API calls

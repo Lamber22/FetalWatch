@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
-import { useTheme } from '../../context/ThemeContext';
+import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           style={[styles.logoutButton, { backgroundColor: colors.error }]}
-          onPress={() => router.replace('/(auth)/login')}
+          onPress={() => router.replace('/(auth)/Login')}
         >
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>

@@ -32,8 +32,31 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+
+# Build artifacts
+build/
+*.tgz
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Windows
+Thumbs.db
+ehthumbs.db
 
 app-example

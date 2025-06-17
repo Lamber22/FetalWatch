@@ -150,8 +150,17 @@ export const deleteUser = async (req, res) => {
 // Get current user
 export const getCurrentUser = async (req, res) => {
     try {
-        // The user ID should be available in req.user from the auth middleware
+        // Check if user is authenticated
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ 
+                status: 'fail', 
+                message: 'Not authenticated. Please log in.' 
+            });
+        }
+
         const userId = req.user.id;
+        console.log('Getting current user for ID:', userId);
+        
         const user = await User.findById(userId).select('-password');
         
         if (!user) {
@@ -161,12 +170,36 @@ export const getCurrentUser = async (req, res) => {
             });
         }
 
+        console.log('Current user found (all fields):', {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt
+        });
+
+        // Ensure all fields are included in response
+        const userData = {
+            _id: user._id,
+            id: user._id,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            email: user.email,
+            role: user.role,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt
+        };
+
+        console.log('Sending user data:', userData);
+        
         res.status(200).json({
             status: 'success',
-            data: user
+            data: userData
         });
     } catch (error) {
-        console.error(error);
+        console.error('getCurrentUser error:', error);
         res.status(500).json({ 
             status: 'error',
             message: 'Server error',

@@ -1,22 +1,20 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Alert,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Image,
-  Alert,
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
-import { authService } from '../../services/api';
-import { APIError } from '../../services/api/errorHandler';
+import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,7 +22,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, loading, error, clearError } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -32,19 +30,13 @@ export default function LoginScreen() {
       return;
     }
 
-    setIsLoading(true);
     try {
-      const response = await authService.signIn({ email, password });
-      await AsyncStorage.setItem('token', response.token);
+      clearError();
+      await signIn(email, password);
       router.replace('/(tabs)');
     } catch (error) {
-      if (error instanceof APIError) {
-        Alert.alert('Error', error.message);
-      } else {
-        Alert.alert('Error', 'An unexpected error occurred');
-      }
-    } finally {
-      setIsLoading(false);
+      // Error is handled by context, but we can show an alert if needed
+      console.error('Login error:', error);
     }
   };
 
@@ -70,6 +62,12 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.form}>
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email</Text>
               <TextInput
@@ -81,59 +79,60 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
-                editable={!isLoading}
+                editable={!loading}
               />
             </View>
 
-            <View style={styles.passwordContainer}>
+            <View style={styles.inputContainer}>
               <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.passwordInput}
-                placeholder="Enter your password"
-                placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoComplete="password"
-                editable={!isLoading}
-              />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
-                disabled={isLoading}
-              >
-                <Text style={styles.eyeIconText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
-              </TouchableOpacity>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Enter your password"
+                  placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoComplete="password"
+                  editable={!loading}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                >
+                  <Text style={styles.eyeIconText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <TouchableOpacity 
               style={styles.forgotPassword}
-              disabled={isLoading}
+              disabled={loading}
             >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={[styles.button, isLoading && styles.buttonDisabled]} 
+              style={[styles.button, loading && styles.buttonDisabled]} 
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? (
+              {loading ? (
                 <ActivityIndicator color={COLORS.primary} />
               ) : (
                 <Text style={styles.buttonText}>Sign In</Text>
               )}
             </TouchableOpacity>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Don't have an account? </Text>
-              <Link href="/(auth)/register" asChild>
-                <TouchableOpacity disabled={isLoading}>
-                  <Text style={styles.footerLink}>Sign Up</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
+            <Link href="/(auth)/Register" asChild>
+              <TouchableOpacity style={styles.linkButton}>
+                <Text style={styles.linkText}>
+                  Don't have an account? Sign Up
+                </Text>
+              </TouchableOpacity>
+            </Link>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -184,6 +183,17 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+    borderRadius: SIZES.radius,
+    padding: SIZES.small,
+    marginBottom: SIZES.medium,
+  },
+  errorText: {
+    color: COLORS.white,
+    fontSize: SIZES.small,
+    textAlign: 'center',
   },
   inputContainer: {
     marginBottom: SIZES.medium,
@@ -261,4 +271,14 @@ const styles = StyleSheet.create({
     fontSize: SIZES.medium,
     fontWeight: 'bold',
   },
-}); 
+  linkButton: {
+    alignSelf: 'center',
+    marginTop: SIZES.medium,
+  },
+  linkText: {
+    color: COLORS.white,
+    fontSize: SIZES.medium,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+});

@@ -1,18 +1,22 @@
 {
-  "name": "frontend",
+  "name": "fetalwatch-mobile",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "description": "Professional fetal health monitoring mobile application",
   "scripts": {
     "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "reset-project": "node ./scripts/reset-project.js",
+    "lint": "expo lint",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-community/datetimepicker": "^8.4.1",
+    "@react-native-picker/picker": "^2.11.0",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
@@ -31,6 +35,7 @@
     "expo-web-browser": "~14.1.6",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-error-boundary": "^4.1.2",
     "react-native": "^0.79.3",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-reanimated": "~3.17.4",
@@ -42,9 +47,22 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
+    "@types/react-native": "^0.73.0",
+    "babel-plugin-module-resolver": "^5.0.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
+    "metro-react-native-babel-preset": "^0.77.0",
+    "react-native-dotenv": "^3.4.9",
     "typescript": "~5.8.3"
   },
+  "keywords": [
+    "react-native",
+    "expo",
+    "mobile",
+    "healthcare",
+    "fetal-monitoring",
+    "medical-app"
+  ],
+  "author": "FetalWatch Team",
   "private": true
 }

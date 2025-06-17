@@ -4,6 +4,8 @@ import generateToken from "../utils/generateToken.js"
 //Register a new user
 export const signUp = async (req, res) => {
     const { firstName, lastName, email, password, role } = req.body;
+    console.log('Sign up request body:', { firstName, lastName, email, role, hasPassword: !!password });
+    
     try {
         const userExists = await User.findOne({ email });
         if (userExists)
@@ -19,13 +21,33 @@ export const signUp = async (req, res) => {
             role
         });
 
-        if (user)
+        console.log('User created successfully:', {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role
+        });
+
+        if (user) {
+            const token = generateToken(user._id, user.role);
             res.status(201).json({
                 status: "success",
                 message: "user created successfully",
-                data: user
+                token: token,
+                data: {
+                    user: {
+                        id: user._id,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        email: user.email,
+                        role: user.role
+                    }
+                }
             });
+        }
     } catch (error) {
+        console.error('Sign up error:', error);
         res.status(500).json({ status: "failed", errorMessage: error.message });
     }
 };
@@ -36,7 +58,14 @@ export const signIn = async (req, res) => {
     console.log('Sign in attempt:', { email, password: password ? '****' : 'not provided' });
     try {
         const user = await User.findOne({ email }).exec();
-        console.log('User found:', user ? 'yes' : 'no');
+        console.log('User found:', user ? {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role
+        } : 'no');
+        
         if (!user) return res.status(401).json({
             status: "bad request",
             message: "invalid email"
@@ -48,12 +77,24 @@ export const signIn = async (req, res) => {
             status: "failed",
             message: "invalid password"
         });
+        
+        const token = generateToken(user.id, user.role);
+        
         res.status(200).json({
             status: "success",
             message: "user authenticated successfully",
-            token: generateToken(user.id, user.role),
-        })
-    }catch (error) {
+            token: token,
+            data: {
+                user: {
+                    id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    role: user.role
+                }
+            }
+        });
+    } catch (error) {
         console.error('Sign in error:', error);
         res.status(500).json({ status: "failed", errorMessage: error.message });
     }
