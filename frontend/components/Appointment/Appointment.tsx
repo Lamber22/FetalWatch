@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,35 +10,20 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
+import { useAppointmentContext } from '../../contexts/AppointmentContext';
 
 export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
+  const { state: appointmentState, actions: appointmentActions } = useAppointmentContext();
 
-  // Mock appointments data
-  const appointments = [
-    {
-      id: '1',
-      time: '09:00',
-      patientName: 'Sarah Johnson......',
-      type: 'Regular Checkup',
-      status: 'confirmed',
-    },
-    {
-      id: '2',
-      time: '10:30',
-      patientName: 'Emily Davis',
-      type: 'Ultrasound',
-      status: 'pending',
-    },
-    {
-      id: '3',
-      time: '14:00',
-      patientName: 'Maria Garcia',
-      type: 'Follow-up',
-      status: 'confirmed',
-    },
-  ];
+  useEffect(() => {
+    // Fetch appointments when component mounts
+    appointmentActions.getAllAppointments();
+  }, []);
+
+  // Get appointments data from context
+  const appointments = appointmentState.appointments;
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -58,34 +43,38 @@ export default function CalendarScreen() {
     setSelectedDate(newDate);
   };
 
-  const renderAppointmentCard = ({ item }: { item: typeof appointments[0] }) => (
+  const renderAppointmentCard = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.appointmentCard}
       onPress={() => {
-        // TODO: Navigate to appointment details
-        console.log('View appointment:', item.id);
+        // Navigate to appointment details
+        router.push(`/appointment/${item._id}`);
       }}
     >
       <View style={styles.timeContainer}>
-        <Text style={styles.timeText}>{item.time}</Text>
+        <Text style={styles.timeText}>{item.time || 'N/A'}</Text>
       </View>
       <View style={styles.appointmentDetails}>
-        <Text style={styles.patientName}>{item.patientName}</Text>
-        <Text style={styles.appointmentType}>{item.type}</Text>
+        <Text style={styles.patientName}>
+          {item.patientName || item.patient?.name || 'Unknown Patient'}
+        </Text>
+        <Text style={styles.appointmentType}>
+          {item.appointmentType || 'Unknown Type'}
+        </Text>
       </View>
       <View
         style={[
           styles.statusBadge,
           {
             backgroundColor:
-              item.status === 'confirmed'
+              item.status?.toLowerCase() === 'confirmed' || item.status?.toLowerCase() === 'scheduled'
                 ? COLORS.success
                 : COLORS.warning,
           },
         ]}
       >
         <Text style={styles.statusText}>
-          {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+          {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Pending'}
         </Text>
       </View>
     </TouchableOpacity>
@@ -147,19 +136,37 @@ export default function CalendarScreen() {
       </View>
 
       {/* Appointments List */}
-      <FlatList
-        data={appointments}
-        renderItem={renderAppointmentCard}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.appointmentsList}
-      />
+      {appointmentState.loading ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading appointments...</Text>
+        </View>
+      ) : appointmentState.error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{appointmentState.error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => appointmentActions.getAllAppointments()}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : appointments.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No appointments found</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={appointments}
+          renderItem={renderAppointmentCard}
+          keyExtractor={(item, index) => item._id || index.toString()}
+          contentContainerStyle={styles.appointmentsList}
+        />
+      )}
 
       {/* Add Appointment Button */}
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => {
-          // TODO: Navigate to add appointment screen
-          console.log('Add new appointment');
         }}
       >
         <Ionicons name="add" size={24} color={COLORS.white} />
@@ -272,5 +279,49 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     ...SHADOWS.medium,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: SIZES.medium * 2,
+  },
+  loadingText: {
+    fontSize: SIZES.font,
+    color: COLORS.gray,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: SIZES.medium * 2,
+  },
+  errorText: {
+    fontSize: SIZES.font,
+    color: COLORS.error || COLORS.primary,
+    textAlign: 'center',
+    marginBottom: SIZES.medium,
+  },
+  retryButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SIZES.medium,
+    paddingVertical: SIZES.base,
+    borderRadius: SIZES.base,
+  },
+  retryButtonText: {
+    color: COLORS.white,
+    fontSize: SIZES.font,
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: SIZES.medium * 2,
+  },
+  emptyText: {
+    fontSize: SIZES.font,
+    color: COLORS.gray,
+    textAlign: 'center',
   },
 }); 

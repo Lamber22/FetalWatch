@@ -9,21 +9,27 @@ import {
   Platform,
   TouchableWithoutFeedback,
   FlatList,
+  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
 import { usePatients } from '../../contexts/PatientsContext';
+import { useAppointmentContext } from '../../contexts/AppointmentContext';
 
 interface AddAppointmentProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  appointment?: any; // For editing existing appointment
+  isEditing?: boolean;
 }
 
-export default function AddAppointmentScreen({ onSuccess, onCancel }: AddAppointmentProps) {
+export default function AddAppointmentScreen({ onSuccess, onCancel, appointment, isEditing }: AddAppointmentProps) {
   const { patients, fetchPatients, loading } = usePatients();
+  const { state: appointmentState, actions: appointmentActions } = useAppointmentContext();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+  const [showAppointmentTypeDropdown, setShowAppointmentTypeDropdown] = useState(false);
   const [patientSearch, setPatientSearch] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -31,13 +37,57 @@ export default function AddAppointmentScreen({ onSuccess, onCancel }: AddAppoint
     patientName: '',
     date: '',
     time: '',
-    type: '',
+    appointmentType: '',
     notes: '',
+    doctor: '',
   });
 
   useEffect(() => {
     fetchPatients();
   }, [fetchPatients]);
+
+  // Pre-populate form when editing
+  useEffect(() => {
+    if (isEditing && appointment) {
+      setFormData({
+        patientId: appointment.patientId || appointment.patient?._id || '',
+        patientName: appointment.patientName || appointment.patient?.name || '',
+        date: appointment.date || '',
+        time: appointment.time || '',
+        appointmentType: appointment.appointmentType || '',
+        notes: appointment.notes || '',
+        doctor: appointment.doctor || '',
+      });
+      
+      // Set patient search and selected patient for editing
+      const patientName = appointment.patientName || appointment.patient?.name || '';
+      setPatientSearch(patientName);
+      
+      // Find and set the selected patient if available
+      if (appointment.patientId || appointment.patient?._id) {
+        const patient = patients.find(p => 
+          p._id === (appointment.patientId || appointment.patient?._id)
+        );
+        if (patient) {
+          setSelectedPatient(patient);
+        }
+      }
+    }
+  }, [isEditing, appointment, patients]);
+
+  // Appointment types matching the database enum
+  const appointmentTypes = [
+    'Routine Checkup',
+    'Ultrasound',
+    'Blood Test',
+    'Consultation',
+    'Follow-up',
+    'Emergency',
+    'Prenatal Care',
+    'Postnatal Care',
+    'Vaccination',
+    'Other'
+  ];
 
   const filteredPatients = patients
     .filter(patient => patient.name && patient.name.toLowerCase().includes(patientSearch.toLowerCase()))
@@ -76,6 +126,11 @@ export default function AddAppointmentScreen({ onSuccess, onCancel }: AddAppoint
     }
   };
 
+  const handleAppointmentTypeSelect = (type: string) => {
+    setFormData({ ...formData, appointmentType: type });
+    setShowAppointmentTypeDropdown(false);
+  };
+
   const formatDate = (date: Date) => {
     return date.toISOString().split('T')[0];
   };
@@ -101,7 +156,10 @@ export default function AddAppointmentScreen({ onSuccess, onCancel }: AddAppoint
   };
 
   const handleDatePress = () => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'web') {
+      // Web platform doesn't need to show/hide picker, HTML input handles it
+      return;
+    } else if (Platform.OS === 'ios') {
       setShowDatePicker(!showDatePicker);
     } else {
       setShowDatePicker(true);
@@ -109,17 +167,67 @@ export default function AddAppointmentScreen({ onSuccess, onCancel }: AddAppoint
   };
 
   const handleTimePress = () => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'web') {
+      // Web platform doesn't need to show/hide picker, HTML input handles it
+      return;
+    } else if (Platform.OS === 'ios') {
       setShowTimePicker(!showTimePicker);
     } else {
       setShowTimePicker(true);
     }
   };
 
-  const handleSubmit = () => {
-    // TODO: Implement appointment scheduling logic
-    console.log('Appointment Data:', formData);
-    onSuccess?.();
+  const handleWebDateChange = (event: any) => {
+    const selectedDate = event.target.value;
+    setFormData({ ...formData, date: selectedDate });
+  };
+
+  const handleWebTimeChange = (event: any) => {
+    const selectedTime = event.target.value;
+    setFormData({ ...formData, time: selectedTime });
+  };
+
+  const handleSubmit = async () => {
+    try {
+      // Validate required fields
+      if (!formData.patientId || !formData.patientName || !formData.date || !formData.time || !formData.appointmentType || !formData.doctor) {
+        Alert.alert('Missing Information', 'Please fill in all required fields');
+        return;
+      }
+
+      const appointmentData = {
+        patientName: formData.patientName,
+        patientId: formData.patientId,
+        date: formData.date,
+        time: formData.time,
+        appointmentType: formData.appointmentType as any,
+        doctor: formData.doctor,
+        notes: formData.notes,
+        status: isEditing ? appointment?.status || 'Scheduled' : 'Scheduled' as const,
+        duration: 30,
+      };
+
+      if (isEditing && appointment?._id) {
+        await appointmentActions.updateAppointment(appointment._id, appointmentData);
+        if (!appointmentState.error) {
+          Alert.alert('Success', 'Appointment updated successfully');
+          onSuccess?.();
+        } else {
+          Alert.alert('Error', appointmentState.error);
+        }
+      } else {
+        await appointmentActions.createAppointment(appointmentData);
+        if (!appointmentState.error) {
+          Alert.alert('Success', 'Appointment scheduled successfully');
+          onSuccess?.();
+        } else {
+          Alert.alert('Error', appointmentState.error);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving appointment:', error);
+      Alert.alert('Error', `Failed to ${isEditing ? 'update' : 'create'} appointment. Please try again.`);
+    }
   };
 
   const renderPatientItem = ({ item }: { item: any }) => (
@@ -133,6 +241,15 @@ export default function AddAppointmentScreen({ onSuccess, onCancel }: AddAppoint
           Week {item.weekOfPregnancy} of pregnancy
         </Text>
       )}
+    </TouchableOpacity>
+  );
+
+  const renderAppointmentTypeItem = ({ item }: { item: string }) => (
+    <TouchableOpacity
+      style={styles.dropdownItem}
+      onPress={() => handleAppointmentTypeSelect(item)}
+    >
+      <Text style={styles.dropdownItemText}>{item}</Text>
     </TouchableOpacity>
   );
 
@@ -172,65 +289,120 @@ export default function AddAppointmentScreen({ onSuccess, onCancel }: AddAppoint
         </View>
         
         <Text style={styles.label}>Date</Text>
-        <TouchableWithoutFeedback onPress={handleDatePress}>
-          <View style={[styles.input, showDatePicker && Platform.OS === 'ios' && styles.inputFocused]}>
-            <Text style={formData.date ? styles.inputText : styles.placeholderText}>
-              {formData.date || 'Select Date'}
-            </Text>
-            {Platform.OS === 'ios' && (
-              <Text style={styles.iosPickerIcon}>
-                {showDatePicker ? '▲' : '▼'}
-              </Text>
-            )}
-          </View>
-        </TouchableWithoutFeedback>
+        {Platform.OS === 'web' ? (
+          <TextInput
+            style={styles.input}
+            placeholder="Select Date"
+            placeholderTextColor={COLORS.gray}
+            value={formData.date}
+            onChange={handleWebDateChange}
+            // @ts-ignore - Web-specific prop
+            type="date"
+            min={new Date().toISOString().split('T')[0]}
+          />
+        ) : (
+          <>
+            <TouchableWithoutFeedback onPress={handleDatePress}>
+              <View style={[styles.input, showDatePicker && Platform.OS === 'ios' && styles.inputFocused]}>
+                <Text style={formData.date ? styles.inputText : styles.placeholderText}>
+                  {formData.date || 'Select Date'}
+                </Text>
+                {Platform.OS === 'ios' && (
+                  <Text style={styles.iosPickerIcon}>
+                    {showDatePicker ? '▲' : '▼'}
+                  </Text>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
 
-        {showDatePicker && (
-          <View style={Platform.OS === 'ios' ? styles.iosDatePickerContainer : undefined}>
-            <DateTimePicker
-              value={formData.date ? new Date(formData.date) : new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'compact' : 'default'}
-              onChange={handleDateChange}
-              minimumDate={new Date()}
-              style={Platform.OS === 'ios' ? styles.iosDatePicker : undefined}
-            />
-          </View>
+            {showDatePicker && (
+              <View style={Platform.OS === 'ios' ? styles.iosDatePickerContainer : undefined}>
+                <DateTimePicker
+                  value={formData.date ? new Date(formData.date) : new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'compact' : 'default'}
+                  onChange={handleDateChange}
+                  minimumDate={new Date()}
+                  style={Platform.OS === 'ios' ? styles.iosDatePicker : undefined}
+                />
+              </View>
+            )}
+          </>
         )}
         
         <Text style={styles.label}>Time</Text>
-        <TouchableWithoutFeedback onPress={handleTimePress}>
-          <View style={[styles.input, showTimePicker && Platform.OS === 'ios' && styles.inputFocused]}>
-            <Text style={formData.time ? styles.inputText : styles.placeholderText}>
-              {formData.time || 'Select Time'}
-            </Text>
-            {Platform.OS === 'ios' && (
-              <Text style={styles.iosPickerIcon}>
-                {showTimePicker ? '▲' : '▼'}
-              </Text>
-            )}
-          </View>
-        </TouchableWithoutFeedback>
+        {Platform.OS === 'web' ? (
+          <TextInput
+            style={styles.input}
+            placeholder="Select Time"
+            placeholderTextColor={COLORS.gray}
+            value={formData.time}
+            onChange={handleWebTimeChange}
+            // @ts-ignore - Web-specific prop
+            type="time"
+          />
+        ) : (
+          <>
+            <TouchableWithoutFeedback onPress={handleTimePress}>
+              <View style={[styles.input, showTimePicker && Platform.OS === 'ios' && styles.inputFocused]}>
+                <Text style={formData.time ? styles.inputText : styles.placeholderText}>
+                  {formData.time || 'Select Time'}
+                </Text>
+                {Platform.OS === 'ios' && (
+                  <Text style={styles.iosPickerIcon}>
+                    {showTimePicker ? '▲' : '▼'}
+                  </Text>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
 
-        {showTimePicker && (
-          <View style={Platform.OS === 'ios' ? styles.iosDatePickerContainer : undefined}>
-            <DateTimePicker
-              value={formData.time ? new Date(`2000-01-01T${formData.time}:00`) : new Date()}
-              mode="time"
-              display={Platform.OS === 'ios' ? 'compact' : 'default'}
-              onChange={handleTimeChange}
-              style={Platform.OS === 'ios' ? styles.iosDatePicker : undefined}
-            />
-          </View>
+            {showTimePicker && (
+              <View style={Platform.OS === 'ios' ? styles.iosDatePickerContainer : undefined}>
+                <DateTimePicker
+                  value={formData.time ? new Date(`2000-01-01T${formData.time}:00`) : new Date()}
+                  mode="time"
+                  display={Platform.OS === 'ios' ? 'compact' : 'default'}
+                  onChange={handleTimeChange}
+                  style={Platform.OS === 'ios' ? styles.iosDatePicker : undefined}
+                />
+              </View>
+            )}
+          </>
         )}
         
         <Text style={styles.label}>Appointment Type</Text>
+        <View style={styles.appointmentTypeContainer}>
+          <TouchableWithoutFeedback onPress={() => setShowAppointmentTypeDropdown(!showAppointmentTypeDropdown)}>
+            <View style={styles.input}>
+              <Text style={formData.appointmentType ? styles.inputText : styles.placeholderText}>
+                {formData.appointmentType || 'Select Appointment Type'}
+              </Text>
+              <Text style={styles.iosPickerIcon}>
+                {showAppointmentTypeDropdown ? '▲' : '▼'}
+              </Text>
+            </View>
+          </TouchableWithoutFeedback>
+          {showAppointmentTypeDropdown && (
+            <View style={styles.dropdown}>
+              <FlatList
+                data={appointmentTypes}
+                keyExtractor={(item) => item}
+                renderItem={renderAppointmentTypeItem}
+                style={styles.dropdownList}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled={true}
+              />
+            </View>
+          )}
+        </View>
+
+        <Text style={styles.label}>Doctor</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g., Regular Checkup, Ultrasound"
+          placeholder="Enter doctor name"
           placeholderTextColor={COLORS.gray}
-          value={formData.type}
-          onChangeText={(text) => setFormData({ ...formData, type: text })}
+          value={formData.doctor}
+          onChangeText={(text) => setFormData({ ...formData, doctor: text })}
         />
 
         <Text style={[styles.sectionTitle, { marginTop: SIZES.medium }]}>
@@ -259,7 +431,7 @@ export default function AddAppointmentScreen({ onSuccess, onCancel }: AddAppoint
             onPress={handleSubmit}
           >
             <Text style={[styles.buttonText, styles.submitButtonText]}>
-              Schedule
+              {isEditing ? 'Update' : 'Schedule'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -302,7 +474,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     alignItems: 'center',
+    color: COLORS.text,
     ...SHADOWS.light,
+    ...(Platform.OS === 'web' && {
+      // Web-specific styles for date/time inputs
+      justifyContent: 'flex-start',
+      flexDirection: 'column',
+      alignItems: 'stretch',
+    }),
   },
   inputFocused: {
     borderColor: COLORS.primary,
@@ -379,6 +558,10 @@ const styles = StyleSheet.create({
   patientInputContainer: {
     position: 'relative',
     zIndex: 1000,
+  },
+  appointmentTypeContainer: {
+    position: 'relative',
+    zIndex: 999,
   },
   dropdown: {
     position: 'absolute',

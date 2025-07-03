@@ -9,6 +9,8 @@ import pregancyRouter from "./routes/pregnancyRoute.js";
 import airouter from "./routes/aiRoute.js";
 import labResultRouter from "./routes/labResultRoute.js";
 import fetalRouter from "./routes/fetalRoute.js";
+import appointmentRouter from "./routes/appointmentRoute.js";
+import doctorRouter from "./routes/doctorRoute.js";
 
 const app = express();
 
@@ -31,5 +33,7 @@ app.use("/api/v1/pregnancies", pregancyRouter);
 app.use("/api/v1/aiResults", airouter);
 app.use("/api/v1/labResults", labResultRouter);
 app.use("/api/v1/fetalwatch", fetalRouter);
+app.use("/api/v1/appointments", appointmentRouter);
+app.use("/api/v1/doctors", doctorRouter);
 
 export default app;

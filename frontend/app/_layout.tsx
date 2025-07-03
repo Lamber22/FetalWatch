@@ -9,6 +9,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { ThemeProvider as CustomThemeProvider } from '../contexts/ThemeContext';
 import { AuthProvider } from '../contexts/AuthContext';
 import { PatientsProvider } from '../contexts/PatientsContext';
+import { AppointmentProvider } from '@/contexts/AppointmentContext';
 
 export {
   ErrorBoundary,
@@ -50,19 +51,21 @@ function RootLayoutNav() {
     <ErrorBoundary fallback={<ErrorFallback />}>
       <CustomThemeProvider>
         <AuthProvider>
-          <PatientsProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                }}
-              >
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="index" options={{ headerShown: false }} />
-              </Stack>
-            </ThemeProvider>
-          </PatientsProvider>
+          <AppointmentProvider>
+            <PatientsProvider>
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                  }}
+                >
+                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="index" options={{ headerShown: false }} />
+                </Stack>
+              </ThemeProvider>
+            </PatientsProvider>
+          </AppointmentProvider>
         </AuthProvider>
       </CustomThemeProvider>
     </ErrorBoundary>
