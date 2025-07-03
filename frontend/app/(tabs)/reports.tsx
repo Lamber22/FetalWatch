@@ -1,36 +1,71 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useReports } from '../../contexts/ReportsContext';
 
 export default function ReportsScreen() {
   const { colors } = useTheme();
+  const {
+    dashboardReport,
+    patientReport,
+    facilityReport,
+    riskIndicatorsReport,
+    loading,
+    error,
+    getDashboardReport,
+    getFacilityReport,
+    getRiskIndicatorsReport,
+    exportReport,
+    clearError
+  } = useReports();
 
+  useEffect(() => {
+    // Load initial reports when component mounts
+    getDashboardReport();
+    getFacilityReport();
+    getRiskIndicatorsReport();
+  }, [getDashboardReport, getFacilityReport, getRiskIndicatorsReport]);
+
+  // Transform the context reports into the format expected by the UI
   const reports = [
     {
-      id: '1',
-      title: 'Monthly Patient Statistics',
-      date: 'March 2024',
+      id: 'dashboard',
+      title: 'Dashboard Report',
+      date: dashboardReport?.generatedAt ? new Date(dashboardReport.generatedAt).toLocaleDateString() : 'Not generated',
       type: 'Analytics',
-      status: 'Completed',
+      status: dashboardReport ? 'Completed' : 'Pending',
+      data: dashboardReport
     },
     {
-      id: '2',
-      title: 'High Risk Cases Report',
-      date: 'March 15, 2024',
+      id: 'facility',
+      title: 'Facility Report',
+      date: facilityReport?.generatedAt ? new Date(facilityReport.generatedAt).toLocaleDateString() : 'Not generated',
+      type: 'Facility Analysis',
+      status: facilityReport ? 'Completed' : 'Pending',
+      data: facilityReport
+    },
+    {
+      id: 'risk',
+      title: 'Risk Indicators Report',
+      date: riskIndicatorsReport?.generatedAt ? new Date(riskIndicatorsReport.generatedAt).toLocaleDateString() : 'Not generated',
       type: 'Risk Assessment',
-      status: 'In Progress',
-    },
-    {
-      id: '3',
-      title: 'Lab Results Summary',
-      date: 'March 14, 2024',
-      type: 'Lab Analysis',
-      status: 'Completed',
+      status: riskIndicatorsReport ? 'Completed' : 'Pending',
+      data: riskIndicatorsReport
     },
   ];
+
+  const handleExportReport = async (reportType: string) => {
+    try {
+      await exportReport(reportType);
+      // Handle successful export (e.g., show success message)
+    } catch (error) {
+      // Error is already handled in the context
+      console.error('Export failed:', error);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
