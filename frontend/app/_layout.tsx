@@ -11,6 +11,8 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { PatientsProvider } from '../contexts/PatientsContext';
 import { AppointmentProvider } from '@/contexts/AppointmentContext';
 import { ReportsProvider } from '@/contexts/ReportsContext';
+import { DoctorProvider } from '../contexts/DoctorContext';
+import { UserProvider } from '../contexts/UserContext';
 
 export {
   ErrorBoundary,
@@ -52,23 +54,27 @@ function RootLayoutNav() {
     <ErrorBoundary fallback={<ErrorFallback />}>
       <CustomThemeProvider>
         <AuthProvider>
-          <ReportsProvider>
-            <AppointmentProvider>
-              <PatientsProvider>
-                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                    }}
-                  >
-                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="index" options={{ headerShown: false }} />
-                  </Stack>
-                </ThemeProvider>
-              </PatientsProvider>
-            </AppointmentProvider>
-          </ReportsProvider>
+          <UserProvider>
+            <ReportsProvider>
+              <AppointmentProvider>
+                <PatientsProvider>
+                  <DoctorProvider>
+                    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                      <Stack
+                        screenOptions={{
+                          headerShown: false,
+                        }}
+                      >
+                        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                        <Stack.Screen name="index" options={{ headerShown: false }} />
+                      </Stack>
+                    </ThemeProvider>
+                  </DoctorProvider>
+                </PatientsProvider>
+              </AppointmentProvider>
+            </ReportsProvider>
+          </UserProvider>
         </AuthProvider>
       </CustomThemeProvider>
     </ErrorBoundary>
