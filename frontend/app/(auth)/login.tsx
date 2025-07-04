@@ -11,6 +11,7 @@ import {
   Image,
   Dimensions,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
@@ -46,95 +47,103 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <View style={styles.content}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require('../../assets/logo/logo-B7EoLIS6.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-          <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>
-              Sign in to continue to FetalWatch
-            </Text>
-          </View>
-
-          <View style={styles.form}>
-            {error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                editable={!loading}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../assets/logo/logo-B7EoLIS6.png')}
+                style={styles.logo}
+                resizeMode="contain"
               />
             </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="Enter your password"
-                  placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoComplete="password"
-                  editable={!loading}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                  disabled={loading}
-                >
-                  <Text style={styles.eyeIconText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.header}>
+              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.subtitle}>
+                Sign in to continue to FetalWatch
+              </Text>
             </View>
 
-            <TouchableOpacity 
-              style={styles.forgotPassword}
-              disabled={loading}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.button, loading && styles.buttonDisabled]} 
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={COLORS.primary} />
-              ) : (
-                <Text style={styles.buttonText}>Sign In</Text>
+            <View style={styles.form}>
+              {error && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
               )}
-            </TouchableOpacity>
 
-            <Link href="/(auth)/Register" asChild>
-              <TouchableOpacity style={styles.linkButton}>
-                <Text style={styles.linkText}>
-                  Don't have an account? Sign Up
-                </Text>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  editable={!loading}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="Enter your password"
+                    placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    editable={!loading}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                  >
+                    <Text style={styles.eyeIconText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <Link href="/(auth)/ForgotPassword" asChild>
+                <TouchableOpacity 
+                  style={styles.forgotPassword}
+                  disabled={loading}
+                >
+                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                </TouchableOpacity>
+              </Link>
+
+              <TouchableOpacity 
+                style={[styles.button, loading && styles.buttonDisabled]} 
+                onPress={handleLogin}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={COLORS.primary} />
+                ) : (
+                  <Text style={styles.buttonText}>Sign In</Text>
+                )}
               </TouchableOpacity>
-            </Link>
+
+              <Link href="/(auth)/Register" asChild>
+                <TouchableOpacity style={styles.linkButton}>
+                  <Text style={styles.linkText}>
+                    Don't have an account? <Text style={styles.blueText}>Sign Up</Text>
+                  </Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -147,6 +156,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: SIZES.medium,
   },
@@ -280,5 +292,8 @@ const styles = StyleSheet.create({
     fontSize: SIZES.medium,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  blueText: {
+    color: '#007AFF', // Blue color
   },
 });

@@ -63,7 +63,7 @@ const ProfileScreen: React.FC = () => {
     try {
       await authService.signOut();
       await clearUser();
-      router.replace('/(auth)/login');
+      router.replace('/Login');
     } catch (e: any) {
       Alert.alert('Logout failed', e.message || 'Could not log out.');
     } finally {

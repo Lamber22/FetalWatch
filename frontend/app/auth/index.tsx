@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +19,11 @@ export default function AuthIndexScreen() {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Header Image */}
       <View style={[styles.imageContainer, { backgroundColor: colors.lightGray }]}>
         <Image
@@ -80,7 +85,7 @@ export default function AuthIndexScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -88,26 +93,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    minHeight: height,
+  },
   imageContainer: {
-    height: height * 0.4,
+    height: Math.min(height * 0.3, 250),
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerImage: {
-    width: width * 0.8,
+    width: width * 0.6,
     height: '80%',
   },
   content: {
     flex: 1,
     padding: SIZES.padding,
     justifyContent: 'space-between',
+    minHeight: height * 0.7,
   },
   textContainer: {
     alignItems: 'center',
-    marginTop: SIZES.padding,
+    marginBottom: SIZES.padding,
   },
   title: {
-    fontSize: SIZES.extraLarge + 4,
+    fontSize: Math.min(SIZES.extraLarge + 4, 28),
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: SIZES.padding,
@@ -120,16 +130,17 @@ const styles = StyleSheet.create({
   features: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginVertical: SIZES.padding * 2,
+    marginVertical: SIZES.padding,
+    paddingHorizontal: SIZES.base,
   },
   feature: {
     alignItems: 'center',
     flex: 1,
   },
   featureIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SIZES.base,
@@ -140,14 +151,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: SIZES.padding,
     marginBottom: SIZES.padding,
+    gap: SIZES.padding,
   },
   button: {
+    flex: 1,
     height: 50,
     borderRadius: SIZES.radius,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SIZES.padding,
     ...SHADOWS.medium,
   },
   loginButton: {},

@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Image, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+
+const { height } = Dimensions.get('window');
 
 export default function IndexScreen() {
   const { user, loading } = useAuth();
@@ -12,7 +14,7 @@ export default function IndexScreen() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        router.replace('/main');
+        router.replace('/home');
       } else {
         router.replace('/auth');
       }
@@ -39,21 +41,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    minHeight: height,
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: '50%',
+    height: height * 0.2,
+    maxWidth: 150,
+    maxHeight: 150,
     marginBottom: 20,
   },
   title: {
-    fontSize: 32,
+    fontSize: Math.min(32, height * 0.04),
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: Math.min(16, height * 0.02),
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
+    paddingHorizontal: 10,
   },
   loader: {
     marginTop: 20,

@@ -19,9 +19,9 @@ type AppRoutes =
   
   // Auth routes
   | '/(auth)'
-  | '/(auth)/login'
-  | '/(auth)/register'
-  | '/(auth)/forgot-password'
+  | '/(auth)/Login'
+  | '/(auth)/Register'
+  | '/(auth)/ForgotPassword'
   
   // Patient routes
   | '/(app)/Patients'

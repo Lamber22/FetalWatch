@@ -11,6 +11,7 @@ import {
   Image,
   Dimensions,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
@@ -24,11 +25,82 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('healthProvider');
-  const { signUp, loading, error, clearError } = useAuth();
+  const [role, setRole] = useState('patient'); // Default role
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState<'email' | 'verify' | 'register'>('email');
+  const [registrationData, setRegistrationData] = useState<{email: string; expiresIn: string} | null>(null);
+  
+  const { 
+    signUp, 
+    initiateSignUp, 
+    verifyEmailAndCompleteSignUp, 
+    resendOTP,
+    loading, 
+    error, 
+    clearError 
+  } = useAuth();
 
-  const handleRegister = async () => {
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+  // Step 1: User enters email and OTP is sent
+  const handleEmailSubmit = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    try {
+      clearError();
+      console.log('Sending OTP to email...');
+      // Step 1: Send OTP to email using initiate-signup endpoint (email only)
+      const result = await initiateSignUp(email);
+      setRegistrationData(result);
+      setStep('verify');
+      Alert.alert(
+        'Verification Code Sent', 
+        `A verification code has been sent to ${email}. Please enter the code to proceed.`
+      );
+    } catch (error: any) {
+      console.error('Email verification initiation error:', error);
+      if (error.message.includes('already exists')) {
+        Alert.alert('Error', 'An account with this email already exists. Please use a different email or try signing in.');
+      } else {
+        Alert.alert('Error', error.message || 'Failed to send verification code');
+      }
+    }
+  };
+
+  // Step 2: User verifies OTP
+  const handleVerifyOTP = async () => {
+    if (!otp || otp.length !== 6) {
+      Alert.alert('Error', 'Please enter a valid 6-digit verification code');
+      return;
+    }
+
+    try {
+      clearError();
+      console.log('Verifying OTP...');
+      // Step 2: Verify the email with OTP, don't complete registration yet
+      await verifyEmailAndCompleteSignUp(email, otp);
+      setStep('register');
+      Alert.alert(
+        'Email Verified!', 
+        'Your email has been verified. Please complete your registration details.'
+      );
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      Alert.alert('Verification Error', error.message || 'Failed to verify code');
+    }
+  };
+
+  // Step 3: User completes registration with all details
+  const handleCompleteRegistration = async () => {
+    if (!firstName || !lastName || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -38,16 +110,61 @@ export default function RegisterScreen() {
       return;
     }
 
+    if (password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters long');
+      return;
+    }
+
     try {
       clearError();
-      await signUp(firstName, lastName, email, password, role);
-      router.replace('/(tabs)');
-    } catch (error) {
-      // Error is handled by context, but we can show an alert if needed
-      console.error('Registration error:', error);
+      console.log('Completing registration...');
+      // Step 3: Complete registration with all user details
+      await signUp(firstName, lastName, email, password, role, otp);
+      Alert.alert(
+        'Success!', 
+        'Your account has been created successfully. Please sign in to continue.',
+        [
+          {
+            text: 'Sign In',
+            onPress: () => router.replace('/(auth)/Login')
+          }
+        ]
+      );
+    } catch (error: any) {
+      console.error('Registration completion error:', error);
+      Alert.alert('Registration Error', error.message || 'Failed to complete registration');
     }
   };
 
+  const handleResendOTP = async () => {
+    try {
+      clearError();
+      console.log('Resending OTP...');
+      const result = await resendOTP(email);
+      setRegistrationData(result);
+      Alert.alert('Code Sent', 'A new verification code has been sent to your email');
+    } catch (error: any) {
+      console.error('Resend OTP error:', error);
+      Alert.alert('Error', error.message || 'Failed to resend verification code');
+    }
+  };
+
+  const handleBackToEmail = () => {
+    setStep('email');
+    setOtp('');
+    setRegistrationData(null);
+    clearError();
+  };
+
+  const handleBackToVerify = () => {
+    setStep('verify');
+    setFirstName('');
+    setLastName('');
+    setPassword('');
+    setConfirmPassword('');
+    setRole('patient');
+    clearError();
+  };
   return (
     <View style={styles.background}>
       <KeyboardAvoidingView
@@ -55,113 +172,248 @@ export default function RegisterScreen() {
         style={styles.container}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <View style={styles.content}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require('../../assets/logo/logo-B7EoLIS6.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-          <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>
-              Join FetalWatch today
-            </Text>
-          </View>
-
-          <View style={styles.form}>
-            {error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>First Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your first name"
-                placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                value={firstName}
-                onChangeText={setFirstName}
-                editable={!loading}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../assets/logo/logo-B7EoLIS6.png')}
+                style={styles.logo}
+                resizeMode="contain"
               />
             </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Last Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your last name"
-                placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                value={lastName}
-                onChangeText={setLastName}
-                editable={!loading}
-              />
+            <View style={styles.header}>
+              <Text style={styles.title}>
+                {step === 'email' ? 'Get Started' : step === 'verify' ? 'Verify Email' : 'Complete Registration'}
+              </Text>
+              <Text style={styles.subtitle}>
+                {step === 'email' 
+                  ? 'Enter your email to receive a verification code' 
+                  : step === 'verify'
+                  ? `Enter the verification code sent to ${email}`
+                  : 'Complete your registration details'
+                }
+              </Text>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={!loading}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                editable={!loading}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm your password"
-                placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                editable={!loading}
-              />
-            </View>
-
-            <TouchableOpacity 
-              style={[styles.button, loading && styles.buttonDisabled]} 
-              onPress={handleRegister}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={COLORS.primary} />
-              ) : (
-                <Text style={styles.buttonText}>Sign Up</Text>
+            <View style={styles.form}>
+              {error && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
               )}
-            </TouchableOpacity>
 
-            <Link href="/(auth)/Login" asChild>
-              <TouchableOpacity style={styles.linkButton}>
-                <Text style={styles.linkText}>
-                  Already have an account? Sign In
-                </Text>
-              </TouchableOpacity>
-            </Link>
+              {step === 'email' ? (
+                <>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Email Address</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter your email address"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      editable={!loading}
+                    />
+                  </View>
+
+                  <TouchableOpacity 
+                    style={[styles.button, loading && styles.buttonDisabled]} 
+                    onPress={handleEmailSubmit}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FF69B4" />
+                    ) : (
+                      <Text style={styles.buttonText}>Send Verification Code</Text>
+                    )}
+                  </TouchableOpacity>
+                </>
+              ) : step === 'verify' ? (
+                <>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Email Address</Text>
+                    <TextInput
+                      style={[styles.input, { opacity: 0.7 }]}
+                      value={email}
+                      editable={false}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Verification Code</Text>
+                    <TextInput
+                      style={[styles.input, styles.otpInput]}
+                      placeholder="Enter 6-digit code"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={otp}
+                      onChangeText={setOtp}
+                      keyboardType="numeric"
+                      maxLength={6}
+                      editable={!loading}
+                    />
+                  </View>
+
+                  {registrationData && (
+                    <View style={styles.infoContainer}>
+                      <Text style={styles.infoText}>
+                        Code expires in {registrationData.expiresIn}
+                      </Text>
+                    </View>
+                  )}
+
+                  <TouchableOpacity 
+                    style={[styles.button, loading && styles.buttonDisabled]} 
+                    onPress={handleVerifyOTP}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FF69B4" />
+                    ) : (
+                      <Text style={styles.buttonText}>Verify Email</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.secondaryButton} 
+                    onPress={handleResendOTP}
+                    disabled={loading}
+                  >
+                    <Text style={styles.secondaryButtonText}>Resend Code</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.linkButton} 
+                    onPress={handleBackToEmail}
+                    disabled={loading}
+                  >
+                    <Text style={styles.linkText}>← Back to Email</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Email Address</Text>
+                    <TextInput
+                      style={[styles.input, { opacity: 0.7 }]}
+                      value={email}
+                      editable={false}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>First Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter your first name"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={firstName}
+                      onChangeText={setFirstName}
+                      editable={!loading}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Last Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter your last name"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={lastName}
+                      onChangeText={setLastName}
+                      editable={!loading}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Role</Text>
+                    <View style={styles.roleContainer}>
+                      {['patient', 'doctor', 'nurse', 'midwife'].map((roleOption) => (
+                        <TouchableOpacity
+                          key={roleOption}
+                          style={[
+                            styles.roleButton,
+                            role === roleOption && styles.roleButtonSelected
+                          ]}
+                          onPress={() => setRole(roleOption)}
+                          disabled={loading}
+                        >
+                          <Text style={[
+                            styles.roleText,
+                            role === roleOption && styles.roleTextSelected
+                          ]}>
+                            {roleOption.charAt(0).toUpperCase() + roleOption.slice(1)}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Password</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter your password (min 8 characters)"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                      editable={!loading}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Confirm Password</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Confirm your password"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      secureTextEntry
+                      editable={!loading}
+                    />
+                  </View>
+
+                  <TouchableOpacity 
+                    style={[styles.button, loading && styles.buttonDisabled]} 
+                    onPress={handleCompleteRegistration}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FF69B4" />
+                    ) : (
+                      <Text style={styles.buttonText}>Complete Registration</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.secondaryButton} 
+                    onPress={handleBackToVerify}
+                    disabled={loading}
+                  >
+                    <Text style={styles.secondaryButtonText}>← Back to Verification</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {step === 'email' && (
+                <Link href="/(auth)/Login" asChild>
+                  <TouchableOpacity style={styles.linkButton}>
+                    <Text style={styles.linkText}>
+                      Already have an account? Sign In
+                    </Text>
+                  </TouchableOpacity>
+                </Link>
+              )}
+            </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -174,6 +426,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: SIZES.medium,
   },
@@ -276,5 +531,61 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: SIZES.medium,
     textAlign: 'center',
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SIZES.base,
+  },
+  roleButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: SIZES.radius,
+    paddingHorizontal: SIZES.medium,
+    paddingVertical: SIZES.small,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  roleButtonSelected: {
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.white,
+  },
+  roleText: {
+    color: COLORS.white,
+    fontSize: SIZES.small,
+    fontWeight: '500',
+  },
+  roleTextSelected: {
+    color: '#FF69B4',
+  },
+  otpInput: {
+    textAlign: 'center',
+    fontSize: SIZES.large,
+    letterSpacing: 4,
+  },
+  infoContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: SIZES.radius,
+    padding: SIZES.small,
+    marginBottom: SIZES.medium,
+  },
+  infoText: {
+    color: COLORS.white,
+    fontSize: SIZES.small,
+    textAlign: 'center',
+    opacity: 0.8,
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: COLORS.white,
+    borderRadius: SIZES.radius,
+    padding: SIZES.medium,
+    alignItems: 'center',
+    marginTop: SIZES.base,
+  },
+  secondaryButtonText: {
+    color: COLORS.white,
+    fontSize: SIZES.medium,
+    fontWeight: '500',
   },
 });
