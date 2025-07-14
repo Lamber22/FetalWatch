@@ -3,6 +3,11 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const PatientSchema = new Schema({
+    facility: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    }, // Reference to the facility (healthProvider)
     name: {
         type: String,
         required: true

@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import Pregnancy from '../models/pregnancyModel.js';
 import Patient from '../models/patientModel.js';
 

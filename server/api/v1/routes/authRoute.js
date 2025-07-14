@@ -9,7 +9,8 @@ import {
     forgotPassword,
     verifyPasswordResetOTP,
     resetPassword,
-    confirmEmailVerification
+    confirmEmailVerification,
+    signUpAdmin
 } from "../controllers/authController.js";
 
 const router = Router();
@@ -18,7 +19,7 @@ router.post("/confirm-email-verification", (req, res) => {
     confirmEmailVerification(req, res);
 });
 
-// New registration flow with email verification
+// Unified registration flow for all users (including admin email verification)
 router.post("/initiate-signup", (req, res) => {
     initiateSignUp(req, res);
 });
@@ -29,6 +30,11 @@ router.post("/verify-email", (req, res) => {
 
 router.post("/resend-otp", (req, res) => {
     resendOTP(req, res);
+});
+
+// Admin-specific signup endpoint (uses unified email verification)
+router.post("/admin/signup", (req, res) => {
+    signUpAdmin(req, res);
 });
 
 // Legacy signup route (now redirects to new flow)

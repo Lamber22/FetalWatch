@@ -162,8 +162,6 @@ const DoctorSchema = new Schema({
 });
 
 // Indexes for efficient querying
-DoctorSchema.index({ email: 1 });
-DoctorSchema.index({ licenseNumber: 1 });
 DoctorSchema.index({ specialization: 1 });
 DoctorSchema.index({ 'hospital.name': 1 });
 

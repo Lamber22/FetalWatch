@@ -7,8 +7,13 @@ import {
     deletePregnancy,
     getPregnanciesByPatientId
 } from "../controllers/pregnancyController.js";
+import { getFacilityContext, requireFacilityAccess } from "../../../middleware/facilityMiddleware.js";
 
 const router = Router();
+
+// Apply facility context and access control to all pregnancy routes
+router.use(getFacilityContext);
+router.use(requireFacilityAccess(['healthProvider', 'doctor', 'nurse', 'midwife']));
 
 router.post("/", createPregnancy);
 router.get("/", getPregnancies);

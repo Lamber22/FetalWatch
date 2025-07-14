@@ -11,8 +11,13 @@ import {
     getTodaysAppointments,
     updateAppointmentStatus
 } from '../controllers/appointmentController.js';
+import { getFacilityContext, requireFacilityAccess } from '../../../middleware/facilityMiddleware.js';
 
 const router = express.Router();
+
+// Apply facility context and access control to all appointment routes
+router.use(getFacilityContext);
+router.use(requireFacilityAccess(['healthProvider', 'doctor', 'nurse', 'midwife']));
 
 router.get('/', getAllAppointments);
 router.get('/today', getTodaysAppointments);

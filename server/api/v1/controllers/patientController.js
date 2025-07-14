@@ -1,5 +1,7 @@
 import Patient from '../models/patientModel.js';
+import User from '../models/userModel.js';
 import { validationResult } from 'express-validator';
+import { createFacilityFilter } from '../../../middleware/facilityMiddleware.js';
 
 // Create a new patient
 export const createPatient = async (req, res) => {
@@ -14,12 +16,37 @@ export const createPatient = async (req, res) => {
             });
         }
 
+        // Get current user and determine their facility admin
+        const currentUser = await User.findById(req.user.id);
+        let facilityAdminId;
+        
+        if (currentUser.role === 'healthProvider') {
+            facilityAdminId = currentUser._id;
+        } else if (['doctor', 'nurse', 'midwife'].includes(currentUser.role)) {
+            facilityAdminId = currentUser.facility;
+        } else if (currentUser.role === 'admin') {
+            return res.status(403).json({
+                status: "failed",
+                message: "System admins cannot create patients directly. Please use a facility admin account."
+            });
+        } else {
+            return res.status(400).json({
+                status: "failed",
+                message: "User not authorized to create patients"
+            });
+        }
+
+        if (!facilityAdminId) {
+            return res.status(400).json({
+                status: "failed",
+                message: "User not associated with any facility"
+            });
+        }
+
         // Validate required fields
         const {
             name, dateOfBirth, gender, address, contact, weekOfPregnancy, expectedDeliveryDate
         } = req.body;
-
-        console.log('Received patient data:', req.body); // Debug log
 
         if (!name || !dateOfBirth || !gender || !address || !contact) {
             return res.status(400).json({ 
@@ -64,6 +91,7 @@ export const createPatient = async (req, res) => {
 
         // Create patient data object
         const patientData = {
+            facility: facilityAdminId, // Associate patient with facility
             name: name.trim(),
             dateOfBirth: birthDate,
             gender,
@@ -82,19 +110,17 @@ export const createPatient = async (req, res) => {
 
         // Create and save patient
         const patient = new Patient(patientData);
-        
         await patient.save();
-        
-        console.log('Patient created successfully:', patient); // Debug log
+
+        // Get facility admin info for response
+        const facilityAdmin = await User.findById(facilityAdminId);
         
         res.status(201).json({ 
             status: "success", 
-            message: "Patient created successfully", 
+            message: `Patient created successfully in ${facilityAdmin.facilityName || 'facility'}`, 
             data: patient 
         });
     } catch (error) {
-        console.error('Error creating patient:', error); // Debug log
-        
         if (error.code === 11000) {
             return res.status(400).json({ 
                 status: "failed", 
@@ -110,95 +136,175 @@ export const createPatient = async (req, res) => {
     }
 };
 
-// Get all patients
+// Get all patients (with facility filtering)
 export const getPatients = async (req, res) => {
     try {
-        const patients = await Patient.find();
-        if (patients.length === 0) return res.json({ message: "No patient found in Database" });
+        // Create facility-based filter
+        const query = createFacilityFilter(req);
+        
+        const patients = await Patient.find(query)
+            .populate('facility', 'facilityName email')
+            .sort({ createdAt: -1 });
+            
+        if (patients.length === 0) {
+            return res.json({ 
+                status: "success",
+                message: "No patients found in your facility",
+                numPatients: 0,
+                data: []
+            });
+        }
+        
         res.status(200).json({
             status: "success",
             numPatients: patients.length,
             data: patients
         });
     } catch (error) {
-        res.status(500).json({status: "failed", error: error.message });
+        res.status(500).json({
+            status: "failed", 
+            message: "Failed to retrieve patients",
+            error: error.message 
+        });
     }
 };
 
-// Get a specific patient
+// Get a specific patient (with facility filtering)
 export const getPatientById = async (req, res) => {
     try {
-        const patient = await Patient.findById(req.params.patientId);
+        // Create facility-based filter with patient ID
+        const query = createFacilityFilter(req, { _id: req.params.patientId });
+        
+        const patient = await Patient.findOne(query)
+            .populate('facility', 'facilityName email')
+            .populate('pregnancies');
+            
         if (!patient) {
-            return res.status(404).json({ message: 'Patient not found' });
+            return res.status(404).json({ 
+                status: "failed",
+                message: 'Patient not found or not accessible from your facility' 
+            });
         }
-        res.status(200).json({ status: "success", message:"Patient found", data: patient });
+        
+        res.status(200).json({ 
+            status: "success", 
+            message: "Patient found", 
+            data: patient 
+        });
     } catch (error) {
-        res.status(500).json({status: "failed", error: error.message });
+        res.status(500).json({
+            status: "failed", 
+            message: "Failed to retrieve patient",
+            error: error.message 
+        });
     }
 };
 
-// Update a patient
+// Update a patient (with facility filtering)
 export const updatePatient = async (req, res) => {
     try {
         const {
             name, dateOfBirth, gender, address, contact, weekOfPregnancy, expectedDeliveryDate
         } = req.body;
 
+        // Create facility-based filter with patient ID
+        const query = createFacilityFilter(req, { _id: req.params.patientId });
+
         const updateData = {
             ...req.body,
             updatedAt: new Date()
         };
 
-        const patient = await Patient.findByIdAndUpdate(req.params.patientId, updateData, { new: true });
+        const patient = await Patient.findOneAndUpdate(query, updateData, { new: true })
+            .populate('facility', 'facilityName email');
+            
         if (!patient) {
-            return res.status(404).json({ message: 'Patient not found' });
+            return res.status(404).json({ 
+                status: "failed",
+                message: 'Patient not found or not accessible from your facility' 
+            });
         }
-        res.status(200).json({ status: "success", message: "Patient updated successfully", data: patient });
+        
+        res.status(200).json({ 
+            status: "success", 
+            message: "Patient updated successfully", 
+            data: patient 
+        });
     } catch (error) {
-        res.status(400).json({ status: "failed", error: error.message });
+        res.status(400).json({ 
+            status: "failed", 
+            message: "Failed to update patient",
+            error: error.message 
+        });
     }
 };
 
-// Delete a patient
+// Delete a patient (with facility filtering)
 export const deletePatient = async (req, res) => {
     try {
-        const patient = await Patient.findByIdAndDelete(req.params.patientId);
+        // Create facility-based filter with patient ID
+        const query = createFacilityFilter(req, { _id: req.params.patientId });
+        
+        const patient = await Patient.findOneAndDelete(query);
         if (!patient) {
-            return res.status(404).json({ message: 'Patient not found' });
+            return res.status(404).json({ 
+                status: "failed",
+                message: 'Patient not found or not accessible from your facility' 
+            });
         }
-        res.json({ status: "success", message: 'Patient deleted successfully' });
+        
+        res.json({ 
+            status: "success", 
+            message: 'Patient deleted successfully' 
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ 
+            status: "failed",
+            message: "Failed to delete patient",
+            error: error.message 
+        });
     }
 };
 
-// filter patients by search query
+// Filter patients by search query (with facility filtering)
 export const managePatients = async (req, res) => {
     try {
         const { page = 1, limit = 10, search = "" } = req.query;
 
-        const query = search
-            ? {
+        // Base search query
+        let searchQuery = {};
+        if (search) {
+            searchQuery = {
                 $or: [
                     { name: { $regex: search, $options: "i" } },
                     { contact: { $regex: search, $options: "i" } }
-                ],
-            }
-            : {};
+                ]
+            };
+        }
+
+        // Apply facility filtering to search query
+        const query = createFacilityFilter(req, searchQuery);
 
         const patients = await Patient.find(query)
+            .populate('facility', 'facilityName email')
+            .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(Number(limit));
 
         const totalPatients = await Patient.countDocuments(query);
 
         res.status(200).json({
+            status: "success",
             patients,
             totalPages: Math.ceil(totalPatients / limit),
             currentPage: Number(page),
+            totalPatients
         });
     } catch (error) {
-        res.status(500).json({ error: "Server error", errorMessage: error.message });
+        res.status(500).json({ 
+            status: "failed",
+            message: "Failed to retrieve patients", 
+            error: error.message 
+        });
     }
 };

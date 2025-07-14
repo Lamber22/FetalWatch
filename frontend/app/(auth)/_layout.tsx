@@ -22,6 +22,18 @@ export default function AuthLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="AccountScreen"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="ForgotPassword"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,17 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, loading, error, clearError } = useAuth();
+  const { signIn, loading, error, clearError, user } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === 'admin') {
+        router.replace('/(admin)/AdminScreen');
+      } else {
+        router.replace('/(tabs)');
+      }
+    }
+  }, [user, loading]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -34,10 +44,29 @@ export default function LoginScreen() {
     try {
       clearError();
       await signIn(email, password);
-      router.replace('/(tabs)');
-    } catch (error) {
-      // Error is handled by context, but we can show an alert if needed
+      // Routing is now handled in useEffect
+    } catch (error: any) {
       console.error('Login error:', error);
+      
+      // Check if error is related to account activation
+      if (error.message && (
+        error.message.includes('pending activation') || 
+        error.message.includes('administrator')
+      )) {
+        Alert.alert(
+          'Account Pending Activation',
+          'Your account requires administrator approval. You will be redirected to the account status page where you can contact support.',
+          [
+            {
+              text: 'Continue',
+              onPress: () => router.replace('/(auth)/AccountScreen')
+            }
+          ]
+        );
+      } else {
+        // For other errors, let the context handle the error display
+        console.log('Other login error:', error.message);
+      }
     }
   };
 
@@ -55,7 +84,7 @@ export default function LoginScreen() {
           <View style={styles.content}>
             <View style={styles.logoContainer}>
               <Image
-                source={require('../../assets/logo/logo-B7EoLIS6.png')}
+                source={require('../../assets/logo/fetalwatch.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />

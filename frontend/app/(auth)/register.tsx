@@ -20,12 +20,15 @@ import { useAuth } from '../../contexts/AuthContext';
 const { width, height } = Dimensions.get('window');
 
 export default function RegisterScreen() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('patient'); // Default role
+  const [facilityName, setFacilityName] = useState('');
+  const [facilityAddress, setFacilityAddress] = useState('');
+  const [facilityPhone, setFacilityPhone] = useState('');
+  const [facilityType, setFacilityType] = useState('');
+  const [facilityLicenseNumber, setFacilityLicenseNumber] = useState('');
+  const [role] = useState('healthProvider'); // Role is fixed to healthProvider for default registration
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'email' | 'verify' | 'register'>('email');
   const [registrationData, setRegistrationData] = useState<{email: string; expiresIn: string} | null>(null);
@@ -100,7 +103,7 @@ export default function RegisterScreen() {
 
   // Step 3: User completes registration with all details
   const handleCompleteRegistration = async () => {
-    if (!firstName || !lastName || !password || !confirmPassword) {
+    if (!facilityName || !facilityAddress || !facilityPhone || !facilityType || !facilityLicenseNumber || !password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -118,15 +121,15 @@ export default function RegisterScreen() {
     try {
       clearError();
       console.log('Completing registration...');
-      // Step 3: Complete registration with all user details
-      await signUp(firstName, lastName, email, password, role, otp);
+      // Only send required fields for healthProvider
+      await signUp(facilityName, facilityAddress, facilityPhone, facilityType, facilityLicenseNumber, email, password, role, otp);
       Alert.alert(
-        'Success!', 
-        'Your account has been created successfully. Please sign in to continue.',
+        'Registration Successful!', 
+        'Your healthProvider account has been created successfully. Your account is pending activation by an administrator.',
         [
           {
-            text: 'Sign In',
-            onPress: () => router.replace('/(auth)/Login')
+            text: 'Continue',
+            onPress: () => router.replace('/(auth)/AccountScreen')
           }
         ]
       );
@@ -158,11 +161,13 @@ export default function RegisterScreen() {
 
   const handleBackToVerify = () => {
     setStep('verify');
-    setFirstName('');
-    setLastName('');
+    setFacilityName('');
+    setFacilityAddress('');
+    setFacilityPhone('');
+    setFacilityType('');
+    setFacilityLicenseNumber('');
     setPassword('');
     setConfirmPassword('');
-    setRole('patient');
     clearError();
   };
   return (
@@ -180,7 +185,7 @@ export default function RegisterScreen() {
           <View style={styles.content}>
             <View style={styles.logoContainer}>
               <Image
-                source={require('../../assets/logo/logo-B7EoLIS6.png')}
+                source={require('../../assets/logo/fetalwatch.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -305,55 +310,62 @@ export default function RegisterScreen() {
                       editable={false}
                     />
                   </View>
-
                   <View style={styles.inputContainer}>
-                    <Text style={styles.label}>First Name</Text>
+                    <Text style={styles.label}>Healthcare Facility Name</Text>
                     <TextInput
                       style={styles.input}
-                      placeholder="Enter your first name"
+                      placeholder="Enter your healthcare facility name"
                       placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                      value={firstName}
-                      onChangeText={setFirstName}
+                      value={facilityName}
+                      onChangeText={setFacilityName}
                       editable={!loading}
                     />
                   </View>
-
                   <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Last Name</Text>
+                    <Text style={styles.label}>Facility Address</Text>
                     <TextInput
                       style={styles.input}
-                      placeholder="Enter your last name"
+                      placeholder="Enter facility address"
                       placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                      value={lastName}
-                      onChangeText={setLastName}
+                      value={facilityAddress}
+                      onChangeText={setFacilityAddress}
                       editable={!loading}
                     />
                   </View>
-
                   <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Role</Text>
-                    <View style={styles.roleContainer}>
-                      {['patient', 'doctor', 'nurse', 'midwife'].map((roleOption) => (
-                        <TouchableOpacity
-                          key={roleOption}
-                          style={[
-                            styles.roleButton,
-                            role === roleOption && styles.roleButtonSelected
-                          ]}
-                          onPress={() => setRole(roleOption)}
-                          disabled={loading}
-                        >
-                          <Text style={[
-                            styles.roleText,
-                            role === roleOption && styles.roleTextSelected
-                          ]}>
-                            {roleOption.charAt(0).toUpperCase() + roleOption.slice(1)}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
+                    <Text style={styles.label}>Facility Phone</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter facility phone"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={facilityPhone}
+                      onChangeText={setFacilityPhone}
+                      keyboardType="phone-pad"
+                      editable={!loading}
+                    />
                   </View>
-
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Facility Type</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter facility type"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={facilityType}
+                      onChangeText={setFacilityType}
+                      editable={!loading}
+                    />
+                  </View>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Facility License Number</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter facility license number"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={facilityLicenseNumber}
+                      onChangeText={setFacilityLicenseNumber}
+                      editable={!loading}
+                    />
+                  </View>
                   <View style={styles.inputContainer}>
                     <Text style={styles.label}>Password</Text>
                     <TextInput
@@ -366,7 +378,6 @@ export default function RegisterScreen() {
                       editable={!loading}
                     />
                   </View>
-
                   <View style={styles.inputContainer}>
                     <Text style={styles.label}>Confirm Password</Text>
                     <TextInput
@@ -379,7 +390,6 @@ export default function RegisterScreen() {
                       editable={!loading}
                     />
                   </View>
-
                   <TouchableOpacity 
                     style={[styles.button, loading && styles.buttonDisabled]} 
                     onPress={handleCompleteRegistration}
@@ -391,7 +401,6 @@ export default function RegisterScreen() {
                       <Text style={styles.buttonText}>Complete Registration</Text>
                     )}
                   </TouchableOpacity>
-
                   <TouchableOpacity 
                     style={styles.secondaryButton} 
                     onPress={handleBackToVerify}
@@ -531,31 +540,6 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: SIZES.medium,
     textAlign: 'center',
-  },
-  roleContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SIZES.base,
-  },
-  roleButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: SIZES.radius,
-    paddingHorizontal: SIZES.medium,
-    paddingVertical: SIZES.small,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  roleButtonSelected: {
-    backgroundColor: COLORS.white,
-    borderColor: COLORS.white,
-  },
-  roleText: {
-    color: COLORS.white,
-    fontSize: SIZES.small,
-    fontWeight: '500',
-  },
-  roleTextSelected: {
-    color: '#FF69B4',
   },
   otpInput: {
     textAlign: 'center',

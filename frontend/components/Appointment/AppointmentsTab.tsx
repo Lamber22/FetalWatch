@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { COLORS, SIZES, SHADOWS } from '../../components/constants/Theme';
+import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppointmentContext } from '../../contexts/AppointmentContext';
-import Modal from '../../components/ui/Modal';
-import AddAppointment from '../../components/Appointment/AddAppointment';
-import AppointmentDetails from '../../components/Appointment/AppointmentDetails';
+import Modal from '../ui/Modal';
+import AddAppointment from './AddAppointment';
+import AppointmentDetails from './AppointmentDetails';
+import Button from '../ui/Button';
 
-export default function CalendarScreen() {
+export default function AppointmentsTab() {
   const { colors } = useTheme();
   const { state: appointmentState, actions: appointmentActions } = useAppointmentContext();
   const [showAddAppointmentModal, setShowAddAppointmentModal] = useState(false);
@@ -18,7 +17,6 @@ export default function CalendarScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
-    // Fetch appointments when component mounts
     appointmentActions.getAllAppointments();
   }, []);
 
@@ -43,27 +41,18 @@ export default function CalendarScreen() {
         if (!appointmentState.error) {
           setShowDetailsModal(false);
           setSelectedAppointment(null);
-          // Refresh appointments list
           appointmentActions.getAllAppointments();
         }
       } catch (error) {
-        console.error('Error cancelling appointment:', error);
+        // Optionally handle error
       }
     }
   };
 
   const formatTime = (time: string | undefined) => {
-    // Handle undefined or invalid time
-    if (!time || typeof time !== 'string') {
-      return 'Time not set';
-    }
-    
-    // Convert 24-hour format to 12-hour format
+    if (!time || typeof time !== 'string') return 'Time not set';
     const [hours, minutes] = time.split(':');
-    if (!hours || !minutes) {
-      return 'Invalid time';
-    }
-    
+    if (!hours || !minutes) return 'Invalid time';
     const hour = parseInt(hours);
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;
@@ -88,17 +77,15 @@ export default function CalendarScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}> 
+      <View style={[styles.header, { backgroundColor: colors.primary }]}> 
         <Text style={styles.headerTitle}>Appointments</Text>
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: colors.white }]}
+        <Button
+          title="Add Appointment"
           onPress={() => setShowAddAppointmentModal(true)}
-        >
-          <Ionicons name="add" size={24} color={colors.primary} />
-        </TouchableOpacity>
+          style={{ marginLeft: 8 }}
+        />
       </View>
-
       <ScrollView style={styles.content}>
         {appointmentState.loading ? (
           <View style={styles.loadingContainer}>
@@ -120,11 +107,7 @@ export default function CalendarScreen() {
           </View>
         ) : (
           appointmentState.appointments.map((appointment: any) => {
-            // Defensive check for appointment object and required properties
-            if (!appointment || !appointment._id) {
-              return null;
-            }
-
+            if (!appointment || !appointment._id) return null;
             return (
               <TouchableOpacity
                 key={appointment._id}
@@ -159,8 +142,6 @@ export default function CalendarScreen() {
           }).filter(Boolean)
         )}
       </ScrollView>
-
-      {/* Add Appointment Modal */}
       <Modal
         visible={showAddAppointmentModal}
         onClose={() => setShowAddAppointmentModal(false)}
@@ -171,14 +152,11 @@ export default function CalendarScreen() {
         <AddAppointment
           onSuccess={() => {
             setShowAddAppointmentModal(false);
-            // Refresh appointments list after successful creation
             appointmentActions.getAllAppointments();
           }}
           onCancel={() => setShowAddAppointmentModal(false)}
         />
       </Modal>
-
-      {/* Appointment Details Modal */}
       <Modal
         visible={showDetailsModal}
         onClose={() => {
@@ -195,8 +173,6 @@ export default function CalendarScreen() {
           onCancel={handleCancelAppointment}
         />
       </Modal>
-
-      {/* Edit Appointment Modal */}
       <Modal
         visible={showEditModal}
         onClose={() => {
@@ -213,7 +189,6 @@ export default function CalendarScreen() {
           onSuccess={() => {
             setShowEditModal(false);
             setSelectedAppointment(null);
-            // Refresh appointments list after successful edit
             appointmentActions.getAllAppointments();
           }}
           onCancel={() => {
@@ -227,9 +202,7 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -242,18 +215,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.white,
   },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.light,
-  },
-  content: {
-    flex: 1,
-    padding: SIZES.padding,
-  },
+  content: { flex: 1, padding: SIZES.padding },
   appointmentCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -262,80 +224,20 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.base,
     ...SHADOWS.light,
   },
-  timeContainer: {
-    width: 80,
-    alignItems: 'center',
-  },
-  time: {
-    fontSize: SIZES.medium,
-    fontWeight: '500',
-  },
-  appointmentInfo: {
-    flex: 1,
-    marginLeft: SIZES.base,
-  },
-  patientName: {
-    fontSize: SIZES.medium,
-    fontWeight: '500',
-  },
-  appointmentType: {
-    fontSize: SIZES.small,
-    marginTop: SIZES.base / 2,
-  },
-  statusContainer: {
-    marginLeft: SIZES.base,
-  },
-  statusBadge: {
-    paddingHorizontal: SIZES.base,
-    paddingVertical: SIZES.base / 2,
-    borderRadius: SIZES.radius,
-  },
-  statusText: {
-    color: COLORS.white,
-    fontSize: SIZES.small,
-    fontWeight: '500',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: SIZES.padding * 2,
-  },
-  loadingText: {
-    fontSize: SIZES.medium,
-    fontWeight: '500',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: SIZES.padding * 2,
-  },
-  errorText: {
-    fontSize: SIZES.medium,
-    fontWeight: '500',
-    marginBottom: SIZES.padding,
-    textAlign: 'center',
-  },
-  retryButton: {
-    paddingHorizontal: SIZES.padding,
-    paddingVertical: SIZES.base,
-    borderRadius: SIZES.radius,
-  },
-  retryButtonText: {
-    color: COLORS.white,
-    fontSize: SIZES.medium,
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: SIZES.padding * 2,
-  },
-  emptyText: {
-    fontSize: SIZES.medium,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
+  timeContainer: { width: 80, alignItems: 'center' },
+  time: { fontSize: SIZES.medium, fontWeight: '500' },
+  appointmentInfo: { flex: 1, marginLeft: SIZES.base },
+  patientName: { fontSize: SIZES.medium, fontWeight: '500' },
+  appointmentType: { fontSize: SIZES.small, marginTop: SIZES.base / 2 },
+  statusContainer: { marginLeft: SIZES.base },
+  statusBadge: { paddingHorizontal: SIZES.base, paddingVertical: SIZES.base / 2, borderRadius: SIZES.radius },
+  statusText: { color: COLORS.white, fontSize: SIZES.small, fontWeight: '500' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: SIZES.padding * 2 },
+  loadingText: { fontSize: SIZES.medium, fontWeight: '500' },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: SIZES.padding * 2 },
+  errorText: { fontSize: SIZES.medium, fontWeight: '500', marginBottom: SIZES.padding, textAlign: 'center' },
+  retryButton: { paddingHorizontal: SIZES.padding, paddingVertical: SIZES.base, borderRadius: SIZES.radius },
+  retryButtonText: { color: COLORS.white, fontSize: SIZES.medium, fontWeight: '500' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: SIZES.padding * 2 },
+  emptyText: { fontSize: SIZES.medium, fontWeight: '500', textAlign: 'center' },
 });

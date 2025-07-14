@@ -17,8 +17,6 @@ class DBClient {
             }
             
             const options = {
-                useNewUrlParser: true,
-                useUnifiedTopology: true,
                 serverSelectionTimeoutMS: 5000,
                 socketTimeoutMS: 45000,
             };

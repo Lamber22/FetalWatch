@@ -17,7 +17,6 @@ const generateOTP = () => {
 // Step 1: Initiate registration with email only - send OTP
 export const initiateSignUp = async (req, res) => {
     const { email } = req.body;
-    console.log('Initiate sign up request:', { email });
     
     try {
         // Validate required fields
@@ -77,7 +76,6 @@ export const initiateSignUp = async (req, res) => {
 // Step 2: Verify OTP only - just confirm email verification
 export const verifyEmailAndCompleteSignUp = async (req, res) => {
     const { email, otp } = req.body;
-    console.log('Verify email attempt:', { email, otp: otp ? '******' : 'not provided' });
     
     try {
         // Validate input
@@ -170,24 +168,63 @@ export const resendOTP = async (req, res) => {
 
 //Step 3: Complete registration with all user details
 export const signUp = async (req, res) => {
-    const { firstName, lastName, email, password, role, otp } = req.body;
-    console.log('Complete signup request:', { firstName, lastName, email, role, hasPassword: !!password, hasOtp: !!otp });
+    const { 
+        facilityName, 
+        facilityAddress, 
+        facilityPhone, 
+        facilityType, 
+        facilityLicenseNumber, 
+        facilityServices,
+        firstName, 
+        lastName, 
+        email, 
+        password, 
+        role, 
+        otp 
+    } = req.body;
     
     try {
-        // Validate required fields
-        if (!firstName || !lastName || !email || !password || !role || !otp) {
+        // Validate required fields based on role
+        if (!email || !password || !role || !otp) {
             return res.status(400).json({
                 status: "failed",
-                message: "All fields are required"
+                message: "Email, password, role, and OTP are required"
             });
         }
 
-        // Validate role for healthcare system
-        const validRoles = ['patient', 'doctor', 'nurse', 'admin', 'midwife'];
-        if (!validRoles.includes(role)) {
+        // For facility admin registration
+        if (role === 'healthProvider') {
+            if (!facilityName) {
+                return res.status(400).json({
+                    status: "failed",
+                    message: "Facility name is required for facility admin registration"
+                });
+            }
+        }
+
+        // For individual healthcare workers
+        if (['doctor', 'nurse', 'midwife'].includes(role)) {
+            if (!firstName || !lastName) {
+                return res.status(400).json({
+                    status: "failed",
+                    message: "First name and last name are required for healthcare worker registration"
+                });
+            }
+        }
+
+        // For self-registration, role must be healthProvider (enforce this)
+        if (role !== 'healthProvider') {
             return res.status(400).json({
                 status: "failed",
-                message: "Invalid role. Must be one of: patient, doctor, nurse, admin, midwife"
+                message: "Invalid role. Self-registration is only allowed for facility admin role."
+            });
+        }
+
+        // facilityName is required for healthProvider registration
+        if (role === 'healthProvider' && !facilityName) {
+            return res.status(400).json({
+                status: "failed",
+                message: "Facility name is required for facility admin registration"
             });
         }
 
@@ -218,36 +255,56 @@ export const signUp = async (req, res) => {
         }
 
         // Create user in database
-        const user = await User.create({
-            firstName,
-            lastName,
+        const userData = {
             email,
             password,
             role,
             emailVerified: true,
-            isActive: true
-        });
+        };
 
-        console.log('User created successfully:', {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            role: user.role,
-            emailVerified: user.emailVerified
-        });
+        // Add facility information for facility admin
+        if (role === 'healthProvider') {
+            userData.facilityName = facilityName;
+            userData.facilityAddress = facilityAddress;
+            userData.facilityPhone = facilityPhone;
+            userData.facilityType = facilityType;
+            userData.facilityLicenseNumber = facilityLicenseNumber;
+            userData.facilityServices = facilityServices || [];
+        }
+
+        // Add personal information for healthcare workers
+        if (['doctor', 'nurse', 'midwife'].includes(role)) {
+            userData.firstName = firstName;
+            userData.lastName = lastName;
+        }
+
+        const user = await User.create(userData);
 
         // Clean up verification data
         await redisService.deleteOTP(email);
         await redisService.deleteData(`email_verified:${email}`);
 
-        // Generate token
-        const token = generateToken(user._id, user.role);
+        // Determine message based on role and activation status
+        let message = "Registration completed successfully.";
+        let token = null;
+        
+        if (user.role === 'systemAdmin') {
+            // Generate token for system admin (auto-activated)
+            token = generateToken(user._id, user.role);
+            message = "System admin registration completed successfully. Welcome to FetalWatch!";
+        } else if (user.role === 'healthProvider') {
+            // Generate token for facility admin (auto-activated)
+            token = generateToken(user._id, user.role);
+            message = `Facility registration completed successfully. Welcome to FetalWatch, ${user.facilityName}!`;
+        } else {
+            // doctor, nurse, midwife are created by facility admin and auto-activated
+            token = generateToken(user._id, user.role);
+            message = "Registration completed successfully. Welcome to FetalWatch!";
+        }
 
-        res.status(201).json({
+        const responseData = {
             status: "success",
-            message: "Registration completed successfully. Welcome to FetalWatch!",
-            token: token,
+            message: message,
             data: {
                 user: {
                     id: user._id,
@@ -255,10 +312,19 @@ export const signUp = async (req, res) => {
                     lastName: user.lastName,
                     email: user.email,
                     role: user.role,
-                    emailVerified: user.emailVerified
+                    emailVerified: user.emailVerified,
+                    isActive: user.isActive,
+                    facility: user.getFacilityInfo()
                 }
             }
-        });
+        };
+
+        // Only include token if user is activated
+        if (token) {
+            responseData.token = token;
+        }
+
+        res.status(201).json(responseData);
 
     } catch (error) {
         console.error('Complete signup error:', error);
@@ -273,7 +339,6 @@ export const signUp = async (req, res) => {
 //user authentication handler
 export const signIn = async (req, res) => {
     const { email, password } = req.body;
-    console.log('Sign in attempt:', { email, password: password ? '****' : 'not provided' });
     
     try {
         // Validate input
@@ -284,14 +349,7 @@ export const signIn = async (req, res) => {
             });
         }
 
-        const user = await User.findOne({ email }).exec();
-        console.log('User found:', user ? {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            role: user.role
-        } : 'no');
+        const user = await User.findOne({ email }).populate('facility').exec();
         
         if (!user) {
             return res.status(401).json({
@@ -311,8 +369,25 @@ export const signIn = async (req, res) => {
             });
         }
 
+        // Check if facility is active (for non-system admin users)
+        if (user.role !== 'systemAdmin' && user.facility && !user.facility.isActive) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Your facility has been deactivated. Please contact the system administrator.",
+                facilityDeactivated: true
+            });
+        }
+
+        // Check if account is activated
+        if (!user.isActive) {
+            return res.status(401).json({
+                status: "failed",
+                message: "Your account is pending activation by an administrator. Please contact your system administrator.",
+                requiresActivation: true
+            });
+        }
+
         const validUser = await user.matchPassword(password);
-        console.log('Password match:', validUser ? 'yes' : 'no');
         
         if (!validUser) {
             return res.status(401).json({
@@ -327,6 +402,17 @@ export const signIn = async (req, res) => {
         
         const token = generateToken(user.id, user.role);
         
+        // Debug: Log facility info for healthProvider users
+        if (user.role === 'healthProvider') {
+            console.log('HealthProvider facility data:', {
+                facilityName: user.facilityName,
+                facilityType: user.facilityType,
+                facilityPhone: user.facilityPhone,
+                facilityAddress: user.facilityAddress,
+                getFacilityInfo: user.getFacilityInfo()
+            });
+        }
+        
         res.status(200).json({
             status: "success",
             message: "Welcome back to FetalWatch! You have been authenticated successfully.",
@@ -338,7 +424,15 @@ export const signIn = async (req, res) => {
                     lastName: user.lastName,
                     email: user.email,
                     role: user.role,
-                    lastLogin: user.lastLogin
+                    lastLogin: user.lastLogin,
+                    facility: user.role === 'healthProvider' 
+                        ? user.getFacilityInfo()  // For facility admins, return their own facility info
+                        : (user.facility ? {      // For healthcare workers, return their assigned facility
+                            id: user.facility._id,
+                            name: user.facility.facilityName,
+                            address: user.facility.getFullAddress ? user.facility.getFullAddress() : 'Address not available',
+                            facilityType: user.facility.facilityType
+                        } : null)
                 }
             }
         });
@@ -575,7 +669,6 @@ export const resetPassword = async (req, res) => {
 // Email verification only - Step 1: Send OTP for email verification
 export const verifyEmailOnly = async (req, res) => {
     const { email } = req.body;
-    console.log('Email verification request:', { email });
     
     try {
         // Validate email
@@ -626,7 +719,6 @@ export const verifyEmailOnly = async (req, res) => {
 // Step 2: Verify email OTP only
 export const confirmEmailVerification = async (req, res) => {
     const { email, otp } = req.body;
-    console.log('Confirm email verification attempt:', { email, otp: otp ? '******' : 'not provided' });
     
     try {
         // Validate input
@@ -666,6 +758,98 @@ export const confirmEmailVerification = async (req, res) => {
         res.status(500).json({
             status: "failed",
             message: "Failed to verify email",
+            errorMessage: error.message
+        });
+    }
+};
+
+// Admin registration - Complete admin registration using unified email verification
+export const signUpAdmin = async (req, res) => {
+    const { facilityName, firstName, lastName, email, password, otp } = req.body;
+    
+    try {
+        // Validate required fields
+        if (!firstName || !lastName || !email || !password || !otp) {
+            return res.status(400).json({
+                status: "failed",
+                message: "All fields are required for admin registration"
+            });
+        }
+
+        // Password strength validation
+        if (password.length < 8) {
+            return res.status(400).json({
+                status: "failed",
+                message: "Password must be at least 8 characters long"
+            });
+        }
+
+        // Check if user already exists
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            return res.status(400).json({
+                status: "failed",
+                message: "User with this email already exists"
+            });
+        }
+
+        // Check if email was verified using the unified email verification flow
+        const emailVerified = await redisService.getData(`email_verified:${email}`);
+        if (!emailVerified || !emailVerified.verified) {
+            return res.status(400).json({
+                status: "failed",
+                message: "Email verification required. Please verify your email first using /auth/initiate-signup and /auth/verify-email."
+            });
+        }
+
+        // Verify the OTP matches the one used for email verification
+        if (emailVerified.otp !== otp) {
+            return res.status(400).json({
+                status: "failed",
+                message: "Invalid verification code"
+            });
+        }
+
+        // Create admin user in database
+        const user = await User.create({
+            facilityName,
+            firstName,
+            lastName,
+            email,
+            password,
+            role: 'admin', // Force admin role
+            emailVerified: true,
+            // isActive will be set to true automatically for admin role
+        });
+
+        // Clean up verification data
+        await redisService.deleteData(`email_verified:${email}`);
+
+        // Generate token for admin (admin accounts are auto-activated)
+        const token = generateToken(user._id, user.role);
+
+        res.status(201).json({
+            status: "success",
+            message: "Admin registration completed successfully. Welcome to FetalWatch Admin Portal!",
+            token: token,
+            data: {
+                user: {
+                    id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    role: user.role,
+                    emailVerified: user.emailVerified,
+                    isActive: user.isActive
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Complete admin signup error:', error);
+        res.status(500).json({
+            status: "failed",
+            message: "Failed to complete admin registration",
             errorMessage: error.message
         });
     }

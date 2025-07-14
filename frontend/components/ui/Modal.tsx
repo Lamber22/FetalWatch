@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
+import { useColorScheme } from '../../hooks/useColorScheme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -37,6 +38,8 @@ export default function Modal({
   closeOnBackdropPress = true,
   animationType = 'scale',
 }: ModalProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
@@ -136,7 +139,7 @@ export default function Modal({
 
   const getModalStyle = () => {
     const baseStyle = {
-      backgroundColor: COLORS.white,
+      backgroundColor: isDark ? '#181A20' : COLORS.white,
       borderRadius: size === 'fullscreen' ? 0 : SIZES.radius * 2,
       ...SHADOWS.dark,
     };
@@ -209,13 +212,12 @@ export default function Modal({
       statusBarTranslucent={Platform.OS === 'android'}
     >
       <TouchableWithoutFeedback onPress={handleBackdropPress}>
-        <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+        <Animated.View style={[styles.overlay, { opacity: fadeAnim, backgroundColor: isDark ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.6)' }]}> 
           <StatusBar
-            backgroundColor="rgba(0, 0, 0, 0.5)"
-            barStyle="light-content"
+            backgroundColor={isDark ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.5)'}
+            barStyle={isDark ? 'light-content' : 'dark-content'}
             translucent
           />
-
           <TouchableWithoutFeedback>
             <Animated.View
               style={[
@@ -228,24 +230,25 @@ export default function Modal({
               ]}
             >
               {/* Header */}
-              <View style={styles.header}>
-                <Text style={styles.title} numberOfLines={1}>
+              <View style={[styles.header, { backgroundColor: isDark ? '#181A20' : COLORS.white, borderBottomColor: isDark ? '#22242A' : COLORS.border }]}> 
+                <Text style={[styles.title, { color: isDark ? '#fff' : COLORS.text }]} numberOfLines={1}>
                   {title}
                 </Text>
                 {showCloseButton && (
                   <TouchableOpacity
-                    style={styles.closeButton}
+                    style={[styles.closeButton, { backgroundColor: isDark ? '#23242B' : COLORS.lightGray }]}
                     onPress={onClose}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="close" size={24} color={COLORS.gray} />
+                    <Ionicons name="close" size={24} color={isDark ? '#fff' : COLORS.gray} />
                   </TouchableOpacity>
                 )}
               </View>
-
               {/* Content */}
-              <View style={styles.content}>{children}</View>
+              <View style={[styles.content, { backgroundColor: isDark ? '#181A20' : COLORS.white }]}> 
+                {typeof children === 'string' ? <Text style={{ color: isDark ? '#fff' : COLORS.text }}>{children}</Text> : children}
+              </View>
             </Animated.View>
           </TouchableWithoutFeedback>
         </Animated.View>

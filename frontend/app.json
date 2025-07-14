@@ -4,7 +4,7 @@
     "slug": "fetalwatch-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/logo/fetalwatch.png",
     "scheme": "fetalwatch",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -15,15 +15,19 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fetalwatch.mobile"
+      "bundleIdentifier": "com.fetalwatch.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/logo/fetalwatch.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.fetalwatch.mobile",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "supportsTablet": true
     },
     "web": {
       "bundler": "metro",
@@ -35,7 +39,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/logo/fetalwatch.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#007AFF"
@@ -48,6 +52,9 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "45cbfe42-2efb-4181-9970-b52542ab6935"
       }
     }
   }

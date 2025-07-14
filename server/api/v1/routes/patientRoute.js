@@ -7,8 +7,15 @@ import {
     updatePatient,
     deletePatient
 } from "../controllers/patientController.js";
+import { getFacilityContext, requireFacilityAccess } from "../../../middleware/facilityMiddleware.js";
+import { authenticateToken } from "../../../middleware/authMiddleware.js";
 
 const router = Router();
+
+// Apply authentication, facility context, and access control to all patient routes
+router.use(authenticateToken);
+router.use(getFacilityContext);
+router.use(requireFacilityAccess(['healthProvider', 'doctor', 'nurse', 'midwife']));
 
 router.post("/", createPatient);
 router.get("/", getPatients);

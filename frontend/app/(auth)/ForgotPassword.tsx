@@ -154,7 +154,7 @@ export default function ForgotPasswordScreen() {
         <View style={styles.content}>
           <View style={styles.logoContainer}>
             <Image
-              source={require('../../assets/logo/logo-B7EoLIS6.png')}
+              source={require('../../assets/logo/fetalwatch.png')}
               style={styles.logo}
               resizeMode="contain"
             />

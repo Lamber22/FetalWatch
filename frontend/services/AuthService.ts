@@ -1,56 +1,17 @@
 import { apiService, ApiResponse } from './API';
-
-interface SignInData {
-  email: string;
-  password: string;
-}
-
-interface SignUpData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role: string;
-  otp: string;
-}
-
-interface InitiateSignUpData {
-  email: string;
-}
-
-interface VerifyEmailData {
-  email: string;
-  otp: string;
-}
-
-interface ResendOTPData {
-  email: string;
-}
-
-interface ForgotPasswordData {
-  email: string;
-}
-
-interface VerifyResetOTPData {
-  email: string;
-  otp: string;
-}
-
-interface ResetPasswordData {
-  email: string;
-  resetToken: string;
-  password: string;
-  confirmPassword: string;
-}
-
-interface VerifyEmailOnlyData {
-  email: string;
-}
-
-interface ConfirmEmailVerificationData {
-  email: string;
-  otp: string;
-}
+import { 
+  AdminSignUpData, 
+  SignUpData, 
+  SignInData,
+  InitiateSignUpData,
+  VerifyEmailData,
+  ResendOTPData,
+  ForgotPasswordData,
+  VerifyResetOTPData,
+  ResetPasswordData,
+  VerifyEmailOnlyData,
+  ConfirmEmailVerificationData
+} from '../interface/iUser';
 
 export const authService = {
   async signIn(data: SignInData): Promise<ApiResponse> {
@@ -229,6 +190,21 @@ export const authService = {
       return result;
     } catch (error) {
       console.error('Resend email verification OTP error:', error);
+      throw error;
+    }
+  },
+
+  // Admin registration (uses unified email verification flow)
+  async signUpAdmin(data: AdminSignUpData): Promise<ApiResponse> {
+    try {
+      console.log('Completing admin registration with:', { email: data.email });
+      
+      const result = await apiService.post('/auth/admin/signup', data, { skipAuth: true });
+      console.log('Admin registration successful');
+      
+      return result;
+    } catch (error) {
+      console.error('Admin signup error:', error);
       throw error;
     }
   },

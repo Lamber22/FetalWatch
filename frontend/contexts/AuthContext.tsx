@@ -1,20 +1,14 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { authService } from '../services/AuthService';
-
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-}
+import { User } from '../interface/iUser';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (firstName: string, lastName: string, email: string, password: string, role: string, otp: string) => Promise<void>;
+  signUp: (facilityName: string, facilityAddress: string, facilityPhone: string, facilityType: string, facilityLicenseNumber: string, email: string, password: string, role: string, otp: string) => Promise<void>;
+  signUpAdmin: (facilityName: string, firstName: string, lastName: string, email: string, password: string, otp: string) => Promise<void>;
   confirmEmailVerification: (email: string, otp: string) => Promise<{ email: string; verified: boolean }>;
   initiateSignUp: (email: string) => Promise<{ email: string; expiresIn: string }>;
   verifyEmailAndCompleteSignUp: (email: string, otp: string) => Promise<{ email: string; verified: boolean }>;
@@ -51,7 +45,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           firstName: response.data.user.firstName,
           lastName: response.data.user.lastName,
           email: response.data.user.email,
-          role: response.data.user.role
+          role: response.data.user.role,
+          // Add facilityName if available (from nested facility or direct)
+          facilityName: response.data.user.facility?.facilityName || response.data.user.facilityName || response.data.user.facility?.name,
+          facility: response.data.user.facility // Optionally keep the full facility object
         };
         console.log('AuthContext: Mapped user data:', userData);
         setUser(userData);
@@ -65,7 +62,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           firstName: fetchedUser.firstName,
           lastName: fetchedUser.lastName,
           email: fetchedUser.email,
-          role: fetchedUser.role
+          role: fetchedUser.role,
+          facilityName: fetchedUser.facility?.facilityName || fetchedUser.facilityName || fetchedUser.facility?.name,
+          facility: fetchedUser.facility
         };
         console.log('AuthContext: Mapped fetched user data:', userData);
         setUser(userData);
@@ -79,12 +78,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  const signUp = useCallback(async (firstName: string, lastName: string, email: string, password: string, role: string, otp: string) => {
+  const signUp = useCallback(async (
+    facilityName: string,
+    facilityAddress: string,
+    facilityPhone: string,
+    facilityType: string,
+    facilityLicenseNumber: string,
+    email: string,
+    password: string,
+    role: string,
+    otp: string
+  ) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('AuthContext: Attempting sign up');
-      const response = await authService.signUp({ firstName, lastName, email, password, role, otp });
+      console.log('AuthContext: Attempting sign up with role:', role);
+      const response = await authService.signUp({ facilityName, facilityAddress, facilityPhone, facilityType, facilityLicenseNumber, email, password, role, otp });
       console.log('AuthContext: Sign up response:', response);
       
       // Don't automatically sign in the user after registration
@@ -93,6 +102,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (err: any) {
       console.error('AuthContext: Sign up error:', err);
       setError(err.message || 'Sign up failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const signUpAdmin = useCallback(async (facilityName: string, firstName: string, lastName: string, email: string, password: string, otp: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('AuthContext: Attempting admin sign up');
+      const response = await authService.signUpAdmin({ facilityName, firstName, lastName, email, password, otp });
+      console.log('AuthContext: Admin sign up response:', response);
+      
+      // Admin registration should return a token and automatically sign them in
+      if (response.data?.user) {
+        console.log('AuthContext: Setting admin user from response:', response.data.user);
+        const userData = {
+          id: response.data.user._id || response.data.user.id,
+          firstName: response.data.user.firstName,
+          lastName: response.data.user.lastName,
+          email: response.data.user.email,
+          role: response.data.user.role,
+          isActive: response.data.user.isActive,
+          emailVerified: response.data.user.emailVerified
+        };
+        console.log('AuthContext: Mapped admin user data:', userData);
+        setUser(userData);
+      }
+      
+    } catch (err: any) {
+      console.error('AuthContext: Admin sign up error:', err);
+      setError(err.message || 'Admin registration failed');
       throw err;
     } finally {
       setLoading(false);
@@ -305,6 +347,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     error,
     signIn,
     signUp,
+    signUpAdmin,
     initiateSignUp,
     verifyEmailAndCompleteSignUp,
     resendOTP,

@@ -386,4 +386,88 @@ export class EmailService {
       throw new Error('Failed to send confirmation email');
     }
   }
+
+  async sendAccountActivationNotification(email, facilityName, role) {
+    try {
+      const currentDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      const mailOptions = {
+        from: `"FetalWatch Healthcare" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'FetalWatch - Account Activated! Welcome to the Platform',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #d1fae5; border-radius: 8px;">
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="margin: 0; font-size: 28px;">FetalWatch</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Healthcare Monitoring System</p>
+            </div>
+            
+            <div style="padding: 40px 30px;">
+              <h2 style="color: #059669; margin-top: 0;">🎉 Welcome to FetalWatch, ${facilityName}!</h2>
+              <p style="font-size: 16px; line-height: 1.6; color: #374151;">
+                Great news! Your FetalWatch account has been successfully activated by an administrator. You can now access the platform and start using all available features.
+              </p>
+              
+              <div style="background-color: #ecfdf5; border: 2px solid #10b981; padding: 25px; margin: 30px 0; border-radius: 8px;">
+                <h3 style="color: #059669; margin: 0 0 15px 0;">Account Details</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #a7f3d0; width: 30%;"><strong>Facility:</strong></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #a7f3d0;">${facilityName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #a7f3d0;"><strong>Email:</strong></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #a7f3d0;">${email}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #a7f3d0;"><strong>Role:</strong></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #a7f3d0;">${role.charAt(0).toUpperCase() + role.slice(1)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;"><strong>Activated:</strong></td>
+                    <td style="padding: 8px 0;">${currentDate}</td>
+                  </tr>
+                </table>
+              </div>
+              
+              <div style="background-color: #f0f9ff; border: 2px solid #0ea5e9; padding: 25px; margin: 20px 0; border-radius: 8px;">
+                <h3 style="color: #0369a1; margin: 0 0 15px 0;">Next Steps</h3>
+                <ol style="margin: 0; color: #374151;">
+                  <li style="margin-bottom: 10px;">Sign in to your FetalWatch account using your email and password</li>
+                  <li style="margin-bottom: 10px;">Complete your profile setup if needed</li>
+                  <li style="margin-bottom: 10px;">Explore the dashboard and available features</li>
+                  <li>Contact support if you need assistance getting started</li>
+                </ol>
+              </div>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="#" style="background-color: #059669; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                  Sign In to FetalWatch
+                </a>
+              </div>
+              
+              <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                <strong>Need Help?</strong><br>
+                If you have any questions or need support, please contact our team at support@fetalwatch.health
+              </p>
+            </div>
+            
+            <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0; font-size: 12px; color: #6b7280;">© ${new Date().getFullYear()} FetalWatch Healthcare. All rights reserved.</p>
+            </div>
+          </div>
+        `,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`Account activation notification sent successfully to ${email}`);
+    } catch (error) {
+      console.error('Failed to send account activation email:', error);
+      throw new Error('Failed to send account activation email');
+    }
+  }
 }

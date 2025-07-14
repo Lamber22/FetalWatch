@@ -1,8 +1,9 @@
 import Appointment from '../models/appointmentModel.js';
 import Patient from '../models/patientModel.js';
 import Doctor from '../models/doctorModel.js';
+import { getFacilityPatientIds } from '../../../middleware/facilityMiddleware.js';
 
-// Get all appointments
+// Get all appointments (with facility filtering)
 export const getAllAppointments = async (req, res) => {
     try {
         const { 
@@ -17,28 +18,57 @@ export const getAllAppointments = async (req, res) => {
             endDate
         } = req.query;
 
-        const filter = {};
-        
+        // Role-based filtering
+        const user = req.user; // Assumes user is attached to req by auth middleware
+        let filter = {};
+
+        if (user.role === 'admin') {
+            // Admin: no filter, see all appointments
+            filter = {};
+        } else if (user.role === 'healthProvider') {
+            // HealthProvider: see all appointments for their facility
+            const facilityPatientIds = await getFacilityPatientIds(req);
+            filter.patientId = { $in: facilityPatientIds };
+        } else if (user.role === 'doctor' || user.role === 'nurse' || user.role === 'midwife') {
+            // Doctor/Nurse/Midwife: only see appointments scheduled for them
+            // Assuming 'doctor' field in Appointment is the doctor's name or ID
+            // If using name, match by full name; if using ID, match by user._id
+            filter.doctor = user.fullName || `${user.firstName} ${user.lastName}` || user._id;
+        } else {
+            // Default: restrict access
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied'
+            });
+        }
+
         if (status) {
             filter.status = status;
         }
-        
         if (appointmentType) {
             filter.appointmentType = appointmentType;
         }
-        
         if (patientId) {
-            filter.patientId = patientId;
+            if (filter.patientId && Array.isArray(filter.patientId.$in)) {
+                // Ensure the requested patient is accessible to this facility
+                if (filter.patientId.$in.map(id => id.toString()).includes(patientId)) {
+                    filter.patientId = patientId;
+                } else {
+                    return res.status(403).json({
+                        status: "failed",
+                        message: "Access denied to this patient's appointments"
+                    });
+                }
+            } else {
+                filter.patientId = patientId;
+            }
         }
-        
         if (doctorId) {
             filter.doctor = doctorId;
         }
-        
         if (date) {
             filter.date = new Date(date);
         }
-        
         if (startDate && endDate) {
             filter.date = {
                 $gte: new Date(startDate),
@@ -48,6 +78,7 @@ export const getAllAppointments = async (req, res) => {
 
         const appointments = await Appointment.find(filter)
             .populate('patientId', 'name contact weekOfPregnancy')
+            .populate('facility', 'facilityName')
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort({ date: 1, time: 1 });
