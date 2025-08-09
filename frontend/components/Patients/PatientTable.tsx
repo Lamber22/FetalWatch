@@ -11,24 +11,28 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
-import { usePatients } from '../../contexts/PatientsContext';
+import { usePatient, PatientUtils } from '../../hooks/usePatient';
+import { Patient } from '../../interface/iPatient';
 
 export default function PatientsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const { patients, loading, error, fetchPatients } = usePatients();
+  const [error, setError] = useState<string | null>(null);
+  const { allPatients, loadingAllPatients, loadAllPatients } = usePatient();
 
   useEffect(() => {
-    fetchPatients();
-  }, [fetchPatients]);
+    const fetchData = async () => {
+      setError(null);
+      const result = await loadAllPatients();
+      if (result === null) {
+        setError('Failed to load patients. Please try again.');
+      }
+    };
+    fetchData();
+  }, [loadAllPatients]);
 
   const calculateAge = (dateOfBirth?: string) => {
-    if (!dateOfBirth) return 'N/A';
-    const birth = new Date(dateOfBirth);
-    const today = new Date();
-    return Math.floor(
-      (today.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-    );
+    return PatientUtils.calculateAge(dateOfBirth) || 'N/A';
   };
 
   const getRiskLevel = (weekOfPregnancy?: number): 'High' | 'Medium' | 'Low' => {
@@ -38,7 +42,7 @@ export default function PatientsScreen() {
     return 'Low';
   };
 
-  const filteredPatients = patients.filter((patient) => {
+  const filteredPatients = allPatients.filter((patient) => {
     const matchesSearch = patient.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -48,14 +52,15 @@ export default function PatientsScreen() {
     return matchesSearch && matchesFilter;
   });
 
-  const renderPatientCard = ({ item }: { item: any }) => {
+  const renderPatientCard = ({ item }: { item: Patient }) => {
     const age = calculateAge(item.dateOfBirth);
     const riskLevel = getRiskLevel(item.weekOfPregnancy);
+    const patientId = PatientUtils.getPatientId(item);
 
     return (
       <TouchableOpacity
         style={styles.patientCard}
-        onPress={() => router.push(`/(app)/Patients/PatientDetails/${item._id}`)}
+        onPress={() => router.push(`/(app)/Patients/PatientDetails/${patientId}`)}
       >
         <View style={styles.patientInfo}>
           <Text style={styles.patientName}>{item.name}</Text>
@@ -165,19 +170,31 @@ export default function PatientsScreen() {
       </View>
 
       {/* Loading/Error/Patient List */}
-      {loading ? (
+      {loadingAllPatients ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={async () => {
+              setError(null);
+              const result = await loadAllPatients();
+              if (result === null) {
+                setError('Failed to load patients. Please try again.');
+              }
+            }}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
           data={filteredPatients}
           renderItem={renderPatientCard}
-          keyExtractor={(item) => item._id || item.name}
+          keyExtractor={(item) => PatientUtils.getPatientId(item) || item.name}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={
             <View style={styles.centerContainer}>
@@ -308,5 +325,17 @@ const styles = StyleSheet.create({
     fontSize: SIZES.medium,
     color: COLORS.gray,
     textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: SIZES.medium,
+    paddingHorizontal: SIZES.medium,
+    paddingVertical: SIZES.base,
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.base,
+  },
+  retryButtonText: {
+    color: COLORS.white,
+    fontSize: SIZES.medium,
+    fontWeight: 'bold',
   },
 });

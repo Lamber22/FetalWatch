@@ -1,14 +1,5 @@
 import { apiService } from './API';
-
-interface Patient {
-  name: string;
-  dateOfBirth?: string;
-  gender?: string;
-  address?: string;
-  contact?: string;
-  weekOfPregnancy?: number;
-  expectedDeliveryDate?: string;
-}
+import { Patient } from '../interface/iPatient';
 
 export const patientService = {
   async createPatient(data: Omit<Patient, 'id'>): Promise<Patient> {
@@ -18,11 +9,13 @@ export const patientService = {
 
   async getPatients(): Promise<Patient[]> {
     const result = await apiService.get<Patient[]>('/patients');
+    console.log('🔄 Fetched patients:', result.data);
     return result.data!;
   },
 
   async getPatient(id: string): Promise<Patient> {
     const result = await apiService.getById<Patient>('patients', id);
+    console.log('🔄 Fetched patient:', result.data);
     return result.data!;
   },
 

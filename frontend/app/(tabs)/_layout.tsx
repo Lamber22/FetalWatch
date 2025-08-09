@@ -79,8 +79,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             <Ionicons
               name={tab.icon as any}
               size={iconSize}
-              color={isFocused ? Colors[colorScheme].tint : Colors[colorScheme].tabIconDefault}
-              style={isFocused ? styles.iconActive : styles.icon}
+              color={isFocused ? '#0a7ea4' : Colors[colorScheme].tabIconDefault}
             />
             <Text style={[styles.tabLabel, { fontSize: labelFontSize }, isFocused && styles.tabLabelActive]}>{tab.title}</Text>
           </TouchableOpacity>
@@ -138,17 +137,11 @@ const styles = StyleSheet.create({
     transitionDuration: '200ms',
   },
   tabItemActive: {
-    backgroundColor: '#f0f6fa',
-  },
-  icon: {
-    opacity: 0.7,
-  },
-  iconActive: {
-    opacity: 1,
+    backgroundColor: 'rgba(10, 126, 164, 0.1)',
   },
   tabLabel: {
     fontSize: 13,
-    color: '#888',
+    color: '#666',
     marginTop: 2,
     fontWeight: '500',
     letterSpacing: 0.2,

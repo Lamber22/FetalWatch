@@ -78,7 +78,6 @@ export const getAllAppointments = async (req, res) => {
 
         const appointments = await Appointment.find(filter)
             .populate('patientId', 'name contact weekOfPregnancy')
-            .populate('facility', 'facilityName')
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort({ date: 1, time: 1 });
@@ -115,6 +114,36 @@ export const getAppointmentById = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: 'Appointment not found'
+            });
+        }
+
+        // Role-based access control
+        const user = req.user;
+        
+        if (user.role === 'admin') {
+            // Admin can access any appointment
+        } else if (user.role === 'healthProvider') {
+            // HealthProvider: check if patient belongs to their facility
+            const facilityPatientIds = await getFacilityPatientIds(req);
+            if (!facilityPatientIds.map(id => id.toString()).includes(appointment.patientId._id.toString())) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Access denied to this appointment"
+                });
+            }
+        } else if (user.role === 'doctor' || user.role === 'nurse' || user.role === 'midwife') {
+            // Healthcare workers: only see appointments scheduled for them
+            const userFullName = user.fullName || `${user.firstName} ${user.lastName}` || user._id;
+            if (appointment.doctor !== userFullName && appointment.doctor !== user._id.toString()) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied. You can only view your own appointments.'
+                });
+            }
+        } else {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied'
             });
         }
 
@@ -326,6 +355,40 @@ export const getAppointmentsByPatient = async (req, res) => {
     try {
         const { patientId } = req.params;
         
+        // Role-based access control
+        const user = req.user;
+        
+        if (user.role === 'admin') {
+            // Admin can access any patient's appointments
+        } else if (user.role === 'healthProvider') {
+            // HealthProvider: check if patient belongs to their facility
+            const facilityPatientIds = await getFacilityPatientIds(req);
+            if (!facilityPatientIds.map(id => id.toString()).includes(patientId)) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Access denied to this patient's appointments"
+                });
+            }
+        } else if (user.role === 'doctor' || user.role === 'nurse' || user.role === 'midwife') {
+            // Healthcare workers: only see appointments scheduled for them for this patient
+            const appointments = await Appointment.find({ 
+                patientId,
+                doctor: user.fullName || `${user.firstName} ${user.lastName}` || user._id
+            })
+                .populate('patientId', 'name contact')
+                .sort({ date: 1, time: 1 });
+
+            return res.status(200).json({
+                success: true,
+                data: appointments
+            });
+        } else {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied'
+            });
+        }
+        
         const appointments = await Appointment.find({ patientId })
             .populate('patientId', 'name contact')
             .sort({ date: 1, time: 1 });
@@ -347,6 +410,40 @@ export const getAppointmentsByPatient = async (req, res) => {
 export const getAppointmentsByDoctor = async (req, res) => {
     try {
         const { doctor } = req.params;
+        const user = req.user;
+        
+        // Role-based access control
+        if (user.role === 'admin') {
+            // Admin can access any doctor's appointments
+        } else if (user.role === 'healthProvider') {
+            // HealthProvider: filter appointments to only show patients from their facility
+            const facilityPatientIds = await getFacilityPatientIds(req);
+            const appointments = await Appointment.find({ 
+                doctor,
+                patientId: { $in: facilityPatientIds }
+            })
+                .populate('patientId', 'name contact weekOfPregnancy')
+                .sort({ date: 1, time: 1 });
+
+            return res.status(200).json({
+                success: true,
+                data: appointments
+            });
+        } else if (user.role === 'doctor' || user.role === 'nurse' || user.role === 'midwife') {
+            // Healthcare workers: only see their own appointments
+            const userFullName = user.fullName || `${user.firstName} ${user.lastName}` || user._id;
+            if (doctor !== userFullName && doctor !== user._id.toString()) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied. You can only view your own appointments.'
+                });
+            }
+        } else {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied'
+            });
+        }
         
         const appointments = await Appointment.find({ doctor })
             .populate('patientId', 'name contact weekOfPregnancy')
@@ -368,17 +465,40 @@ export const getAppointmentsByDoctor = async (req, res) => {
 // Get today's appointments
 export const getTodaysAppointments = async (req, res) => {
     try {
+        // Role-based filtering
+        const user = req.user; // Assumes user is attached to req by auth middleware
+        let filter = {};
+
+        if (user.role === 'admin') {
+            // Admin: no filter, see all appointments
+            filter = {};
+        } else if (user.role === 'healthProvider') {
+            // HealthProvider: see all appointments for their facility
+            const facilityPatientIds = await getFacilityPatientIds(req);
+            filter.patientId = { $in: facilityPatientIds };
+        } else if (user.role === 'doctor' || user.role === 'nurse' || user.role === 'midwife') {
+            // Doctor/Nurse/Midwife: only see appointments scheduled for them
+            filter.doctor = user.fullName || `${user.firstName} ${user.lastName}` || user._id;
+        } else {
+            // Default: restrict access
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied'
+            });
+        }
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        const appointments = await Appointment.find({
-            date: {
-                $gte: today,
-                $lt: tomorrow
-            }
-        })
+        // Add date filter to existing role-based filter
+        filter.date = {
+            $gte: today,
+            $lt: tomorrow
+        };
+
+        const appointments = await Appointment.find(filter)
         .populate('patientId', 'name contact weekOfPregnancy')
         .sort({ time: 1 });
 

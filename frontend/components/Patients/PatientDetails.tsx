@@ -1,34 +1,57 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
-import { usePatients } from '../../contexts/PatientsContext';
+import { usePatient, PatientUtils } from '../../hooks/usePatient';
+import { Patient } from '../../interface/iPatient';
 
 export default function PatientDetailsScreen() {
   const params = useLocalSearchParams();
   const id = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '';
-  const { selectedPatient, loading, error, getPatient } = usePatients();
+  const { loadPatient, getPatient, isLoading } = usePatient();
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (id) {
-      getPatient(id);
-    }
-  }, [id, getPatient]);
+    const fetchPatient = async () => {
+      if (id) {
+        try {
+          // Check if patient is already cached
+          const cachedPatient = getPatient(id);
+          if (cachedPatient) {
+            setPatient(cachedPatient);
+          } else {
+            // Load patient from API
+            const loadedPatient = await loadPatient(id);
+            if (loadedPatient) {
+              setPatient(loadedPatient);
+            } else {
+              setError('Patient not found');
+            }
+          }
+        } catch (err) {
+          setError('Failed to load patient');
+        }
+      }
+    };
+
+    fetchPatient();
+  }, [id, loadPatient, getPatient]);
 
   const calculateAge = (dateOfBirth?: string) => {
-    if (!dateOfBirth) return 'N/A';
-    const birth = new Date(dateOfBirth);
-    const today = new Date();
-    return Math.floor((today.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+    return PatientUtils.calculateAge(dateOfBirth) || 'N/A';
   };
 
-  const getRiskLevel = (weekOfPregnancy?: number) => {
-    if (!weekOfPregnancy) return 'Medium';
-    if (weekOfPregnancy < 20 || weekOfPregnancy > 35) return 'High';
-    if (weekOfPregnancy < 24 || weekOfPregnancy > 32) return 'Medium';
+  const getRiskLevel = (patient?: Patient) => {
+    const gestationalAge = PatientUtils.getGestationalAge(patient);
+    if (!gestationalAge) return 'Medium';
+    if (gestationalAge < 20 || gestationalAge > 35) return 'High';
+    if (gestationalAge < 24 || gestationalAge > 32) return 'Medium';
     return 'Low';
   };
+
+  const loading = isLoading(id);
 
   if (loading) {
     return (
@@ -46,7 +69,7 @@ export default function PatientDetailsScreen() {
     );
   }
 
-  if (!selectedPatient) {
+  if (!patient) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>Patient not found</Text>
@@ -54,17 +77,19 @@ export default function PatientDetailsScreen() {
     );
   }
 
-  const age = calculateAge(selectedPatient.dateOfBirth);
-  const riskLevel = getRiskLevel(selectedPatient.weekOfPregnancy);
+  const age = calculateAge(patient.dateOfBirth);
+  const riskLevel = getRiskLevel(patient);
+  const gestationalAge = PatientUtils.getGestationalAge(patient);
+  const latestRecord = PatientUtils.getLatestMedicalRecord(patient);
 
   return (
     <ScrollView style={styles.container}>
       {/* Patient Header */}
       <View style={styles.header}>
         <View style={styles.headerInfo}>
-          <Text style={styles.patientName}>{selectedPatient.name}</Text>
+          <Text style={styles.patientName}>{patient.name}</Text>
           <Text style={styles.patientDetails}>
-            Age: {age} • ID: {selectedPatient._id}
+            Age: {age} • ID: {patient._id}
           </Text>
         </View>
         <View
@@ -115,19 +140,27 @@ export default function PatientDetailsScreen() {
         <View style={styles.card}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Full Name</Text>
-            <Text style={styles.detailValue}>{selectedPatient.name}</Text>
+            <Text style={styles.detailValue}>{patient.name}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Gender</Text>
-            <Text style={styles.detailValue}>{selectedPatient.gender || 'N/A'}</Text>
+            <Text style={styles.detailValue}>{patient.gender || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Date of Birth</Text>
+            <Text style={styles.detailValue}>{patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Address</Text>
-            <Text style={styles.detailValue}>{selectedPatient.address || 'N/A'}</Text>
+            <Text style={styles.detailValue}>{patient.address || 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Contact</Text>
-            <Text style={styles.detailValue}>{selectedPatient.contact || 'N/A'}</Text>
+            <Text style={styles.detailValue}>{patient.contact || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Facility</Text>
+            <Text style={styles.detailValue}>{PatientUtils.getFacilityName(patient)}</Text>
           </View>
         </View>
       </View>
@@ -137,12 +170,16 @@ export default function PatientDetailsScreen() {
         <Text style={styles.sectionTitle}>Pregnancy Details</Text>
         <View style={styles.card}>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Week of Pregnancy</Text>
-            <Text style={styles.detailValue}>{selectedPatient.weekOfPregnancy || 'N/A'}</Text>
+            <Text style={styles.detailLabel}>Gestational Age</Text>
+            <Text style={styles.detailValue}>{gestationalAge ? `${gestationalAge} weeks` : 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Expected Delivery</Text>
-            <Text style={styles.detailValue}>{selectedPatient.expectedDeliveryDate || 'N/A'}</Text>
+            <Text style={styles.detailLabel}>Expected Due Date</Text>
+            <Text style={styles.detailValue}>{latestRecord?.expectedDueDate ? new Date(latestRecord.expectedDueDate).toLocaleDateString() : 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Last Menstrual Period</Text>
+            <Text style={styles.detailValue}>{latestRecord?.lastMenstrualPeriod ? new Date(latestRecord.lastMenstrualPeriod).toLocaleDateString() : 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Risk Level</Text>
@@ -151,27 +188,102 @@ export default function PatientDetailsScreen() {
         </View>
       </View>
 
-      {/* Placeholder sections for future data */}
+      {/* Medical History */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Medical History</Text>
+        <View style={styles.card}>
+          {latestRecord?.medicalHistory ? (
+            Object.entries(latestRecord.medicalHistory).map(([condition, hasCondition]) => (
+              hasCondition && (
+                <View key={condition} style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>{condition.charAt(0).toUpperCase() + condition.slice(1)}</Text>
+                  <Text style={styles.detailValue}>Yes</Text>
+                </View>
+              )
+            ))
+          ) : (
+            <Text style={styles.placeholderText}>No medical history recorded</Text>
+          )}
+        </View>
+      </View>
+
+      {/* Latest Vitals */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Latest Vitals</Text>
         <View style={styles.card}>
-          <Text style={styles.placeholderText}>No vitals recorded yet</Text>
+          {latestRecord?.physicalExam ? (
+            <>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Blood Pressure</Text>
+                <Text style={styles.detailValue}>{PatientUtils.getLatestBloodPressure(patient)}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Weight</Text>
+                <Text style={styles.detailValue}>{latestRecord.physicalExam.weight ? `${latestRecord.physicalExam.weight} kg` : 'N/A'}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Height</Text>
+                <Text style={styles.detailValue}>{latestRecord.physicalExam.height ? `${latestRecord.physicalExam.height} cm` : 'N/A'}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>BMI</Text>
+                <Text style={styles.detailValue}>{PatientUtils.getLatestBMI(patient) || 'N/A'}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Pulse</Text>
+                <Text style={styles.detailValue}>{latestRecord.physicalExam.pulse ? `${latestRecord.physicalExam.pulse} bpm` : 'N/A'}</Text>
+              </View>
+            </>
+          ) : (
+            <Text style={styles.placeholderText}>No vitals recorded yet</Text>
+          )}
         </View>
       </View>
 
+      {/* Risk Factors */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Current Symptoms</Text>
+        <Text style={styles.sectionTitle}>Risk Factors</Text>
         <View style={styles.card}>
-          <Text style={styles.placeholderText}>No symptoms recorded</Text>
+          {PatientUtils.getRiskFactors(patient).length > 0 ? (
+            PatientUtils.getRiskFactors(patient).map((factor, index) => (
+              <View key={index} style={styles.detailRow}>
+                <Text style={styles.detailValue}>• {factor}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.placeholderText}>No risk factors identified</Text>
+          )}
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Current Medications</Text>
-        <View style={styles.card}>
-          <Text style={styles.placeholderText}>No medications recorded</Text>
+      {/* Latest Medical Record Details */}
+      {latestRecord && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Latest Medical Record</Text>
+          <View style={styles.card}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Visit Date</Text>
+              <Text style={styles.detailValue}>{latestRecord.date ? new Date(latestRecord.date).toLocaleDateString() : 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Chief Complaint</Text>
+              <Text style={styles.detailValue}>{latestRecord.chiefComplaint || 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Gravida</Text>
+              <Text style={styles.detailValue}>{latestRecord.gravida || 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Para</Text>
+              <Text style={styles.detailValue}>{latestRecord.para || 'N/A'}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Next Visit</Text>
+              <Text style={styles.detailValue}>{latestRecord.followUp?.nextVisitDate ? new Date(latestRecord.followUp.nextVisitDate).toLocaleDateString() : 'N/A'}</Text>
+            </View>
+          </View>
         </View>
-      </View>
+      )}
     </ScrollView>
   );
 }

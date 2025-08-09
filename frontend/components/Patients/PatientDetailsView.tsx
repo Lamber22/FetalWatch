@@ -1,20 +1,11 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
 import { useTheme } from '../../contexts/ThemeContext';
-
-interface Patient {
-  _id?: string;
-  name: string;
-  dateOfBirth?: string;
-  gender?: string;
-  address?: string;
-  contact?: string;
-  weekOfPregnancy?: number;
-  expectedDeliveryDate?: string;
-  createdAt?: string;
-}
+import { usePatientReports, PatientReportUtils } from '../../hooks/usePatientReports';
+import { PatientUtils } from '../../hooks/usePatient';
+import { Patient } from '../../interface/iPatient';
 
 interface PatientDetailsViewProps {
   patient: Patient;
@@ -28,23 +19,41 @@ export default function PatientDetailsView({
   showActions = false 
 }: PatientDetailsViewProps) {
   const { colors } = useTheme();
+  
+  // Use the patient reports hook
+  const { 
+    loadPatientReports, 
+    isLoading, 
+    hasData, 
+    patientReports 
+  } = usePatientReports();
 
-  const calculateAge = (dateOfBirth?: string) => {
-    if (!dateOfBirth) return 'N/A';
-    const birth = new Date(dateOfBirth);
-    const today = new Date();
-    return Math.floor((today.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-  };
+  const patientId = patient._id;
+  const reportData = patientId ? patientReports[patientId] : null;
 
-  const getRiskLevel = (weekOfPregnancy?: number) => {
-    if (!weekOfPregnancy) return 'Medium';
-    if (weekOfPregnancy < 20 || weekOfPregnancy > 35) return 'High';
-    if (weekOfPregnancy < 24 || weekOfPregnancy > 32) return 'Medium';
+  // Load patient reports when component mounts
+  useEffect(() => {
+    if (patientId && !hasData(patientId)) {
+      loadPatientReports(patientId).catch((error) => {
+        console.error('Failed to load patient reports in PatientDetailsView:', error);
+      });
+    }
+  }, [patientId, hasData, loadPatientReports]);
+
+  const age = PatientUtils.calculateAge(patient.dateOfBirth) || 'N/A';
+  const gestationalAge = PatientUtils.getGestationalAge(patient);
+  
+  // Use report data for risk level if available, otherwise calculate from gestational age
+  const getRiskLevel = () => {
+    if (!gestationalAge) return 'Medium';
+    if (gestationalAge < 20 || gestationalAge > 35) return 'High';
+    if (gestationalAge < 24 || gestationalAge > 32) return 'Medium';
     return 'Low';
   };
 
-  const age = calculateAge(patient.dateOfBirth);
-  const riskLevel = getRiskLevel(patient.weekOfPregnancy);
+  const riskLevel = reportData?.riskAssessment?.riskLevel 
+    ? reportData.riskAssessment.riskLevel.charAt(0).toUpperCase() + reportData.riskAssessment.riskLevel.slice(1)
+    : getRiskLevel();
 
   const handleActionPress = (action: string) => {
     if (onActionPress && patient._id) {
@@ -61,23 +70,33 @@ export default function PatientDetailsView({
             {patient.name}
           </Text>
           <Text style={[styles.patientDetails, { color: colors.gray || COLORS.gray }]}>
-            Age: {age} {patient._id && `• ID: ${patient._id}`}
+            Age: {age} 
           </Text>
         </View>
-        <View
-          style={[
-            styles.riskBadge,
-            {
-              backgroundColor:
-                riskLevel === 'High'
-                  ? colors.error || COLORS.error
-                  : riskLevel === 'Medium'
-                  ? colors.warning || COLORS.warning
-                  : colors.success || COLORS.success,
-            },
-          ]}
-        >
-          <Text style={styles.riskText}>{riskLevel} Risk</Text>
+        <View style={styles.riskContainer}>
+          {patientId && isLoading(patientId) && (
+            <ActivityIndicator size="small" color={colors.primary || COLORS.primary} style={styles.loadingIndicator} />
+          )}
+          <View
+            style={[
+              styles.riskBadge,
+              {
+                backgroundColor: PatientReportUtils.getRiskLevelColor(riskLevel, colors) || 
+                  (riskLevel === 'High'
+                    ? colors.error || COLORS.error
+                    : riskLevel === 'Medium'
+                    ? colors.warning || COLORS.warning
+                    : colors.success || COLORS.success),
+              },
+            ]}
+          >
+            <Text style={styles.riskText}>{riskLevel} Risk</Text>
+          </View>
+          {reportData?.riskAssessment?.riskScore && (
+            <Text style={[styles.riskScore, { color: colors.gray || COLORS.gray }]}>
+              Score: {reportData.riskAssessment.riskScore}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -108,112 +127,183 @@ export default function PatientDetailsView({
         </View>
       )}
 
-      {/* Patient Info */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text || COLORS.text }]}>
-          Patient Information
-        </Text>
-        <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
-              Full Name
-            </Text>
-            <Text style={[styles.detailValue, { color: colors.text || COLORS.text }]}>
-              {patient.name}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
-              Gender
-            </Text>
-            <Text style={[styles.detailValue, { color: colors.text || COLORS.text }]}>
-              {patient.gender || 'N/A'}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
-              Address
-            </Text>
-            <Text style={[styles.detailValue, { color: colors.text || COLORS.text }]}>
-              {patient.address || 'N/A'}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
-              Contact
-            </Text>
-            <Text style={[styles.detailValue, { color: colors.text || COLORS.text }]}>
-              {patient.contact || 'N/A'}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Pregnancy Details */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text || COLORS.text }]}>
-          Pregnancy Details
-        </Text>
-        <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
-              Week of Pregnancy
-            </Text>
-            <Text style={[styles.detailValue, { color: colors.text || COLORS.text }]}>
-              {patient.weekOfPregnancy || 'N/A'}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
-              Expected Delivery
-            </Text>
-            <Text style={[styles.detailValue, { color: colors.text || COLORS.text }]}>
-              {patient.expectedDeliveryDate || 'N/A'}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
-              Risk Level
-            </Text>
-            <Text style={[styles.detailValue, { color: colors.text || COLORS.text }]}>
-              {riskLevel}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Placeholder sections for future data */}
+      {/* Latest Vitals */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text || COLORS.text }]}>
           Latest Vitals
         </Text>
-        <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
-          <Text style={[styles.placeholderText, { color: colors.gray || COLORS.gray }]}>
-            No vitals recorded yet
-          </Text>
-        </View>
+        {reportData?.vitalTrends && reportData.vitalTrends.length > 0 ? (
+          <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
+            {(() => {
+              const latestVital = reportData.vitalTrends[reportData.vitalTrends.length - 1];
+              return (
+                <View style={styles.vitalsGrid}>
+                  <View style={styles.vitalItem}>
+                    <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
+                      Blood Pressure
+                    </Text>
+                    <Text style={[styles.vitalValue, { color: colors.text || COLORS.text }]}>
+                      {PatientReportUtils.formatBloodPressure(latestVital.bloodPressure) || 'N/A'}
+                    </Text>
+                  </View>
+                  <View style={styles.vitalItem}>
+                    <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
+                      Heart Rate
+                    </Text>
+                    <Text style={[styles.vitalValue, { color: colors.text || COLORS.text }]}>
+                      {latestVital.heartRate ? `${latestVital.heartRate} bpm` : 'N/A'}
+                    </Text>
+                  </View>
+                  <View style={styles.vitalItem}>
+                    <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
+                      Weight
+                    </Text>
+                    <Text style={[styles.vitalValue, { color: colors.text || COLORS.text }]}>
+                      {latestVital.weight ? `${latestVital.weight} kg` : 'N/A'}
+                    </Text>
+                  </View>
+                  <View style={styles.vitalItem}>
+                    <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
+                      Temperature
+                    </Text>
+                    <Text style={[styles.vitalValue, { color: colors.text || COLORS.text }]}>
+                      {latestVital.temperature ? `${latestVital.temperature}°C` : 'N/A'}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })()}
+          </View>
+        ) : (
+          <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
+            <Text style={[styles.placeholderText, { color: colors.gray || COLORS.gray }]}>
+              {patientId && isLoading(patientId) ? 'Loading vitals...' : 'No vitals recorded yet'}
+            </Text>
+          </View>
+        )}
       </View>
 
+      {/* Risk Assessment */}
+      {patientId && reportData?.riskAssessment && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text || COLORS.text }]}>
+            Risk Assessment Details
+          </Text>
+          <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
+                Risk Level
+              </Text>
+              <Text style={[styles.detailValue, { color: colors.text || COLORS.text }]}>
+                {reportData.riskAssessment.riskLevel || 'N/A'}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { color: colors.gray || COLORS.gray }]}>
+                Risk Score
+              </Text>
+              <Text style={[styles.detailValue, { color: colors.text || COLORS.text }]}>
+                {reportData.riskAssessment.riskScore || 'N/A'}
+              </Text>
+            </View>
+            {reportData.riskAssessment.riskFactors && reportData.riskAssessment.riskFactors.length > 0 && (
+              <View style={styles.riskFactorsContainer}>
+                <Text style={[styles.subSectionTitle, { color: colors.text || COLORS.text }]}>
+                  Risk Factors:
+                </Text>
+                {reportData.riskAssessment.riskFactors.slice(0, 3).map((factor, index) => (
+                  <Text key={index} style={[styles.riskFactor, { color: colors.gray || COLORS.gray }]}>
+                    • {factor}
+                  </Text>
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* Current Symptoms/Complications */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text || COLORS.text }]}>
-          Current Symptoms
+          Potential Complications
         </Text>
-        <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
-          <Text style={[styles.placeholderText, { color: colors.gray || COLORS.gray }]}>
-            No symptoms recorded
-          </Text>
-        </View>
+        {reportData?.complications && reportData.complications.length > 0 ? (
+          <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
+            {reportData.complications.slice(0, 3).map((complication, index) => (
+              <View 
+                key={index} 
+                style={[
+                  styles.complicationItem,
+                  index === reportData.complications!.slice(0, 3).length - 1 && styles.lastItem
+                ]}
+              >
+                <View style={styles.complicationHeader}>
+                  <Text style={[styles.complicationName, { color: colors.text || COLORS.text }]}>
+                    {complication.name}
+                  </Text>
+                  <View style={[
+                    styles.probabilityBadge,
+                    { backgroundColor: PatientReportUtils.getProbabilityColor(complication.probability, colors) }
+                  ]}>
+                    <Text style={styles.probabilityText}>
+                      {complication.probability}
+                    </Text>
+                  </View>
+                </View>
+                {complication.description && (
+                  <Text style={[styles.complicationDescription, { color: colors.gray || COLORS.gray }]}>
+                    {complication.description}
+                  </Text>
+                )}
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
+            <Text style={[styles.placeholderText, { color: colors.gray || COLORS.gray }]}>
+              {patientId && isLoading(patientId) ? 'Loading complications...' : 'No complications identified'}
+            </Text>
+          </View>
+        )}
       </View>
 
+      {/* Current Medications/Recommendations */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text || COLORS.text }]}>
-          Current Medications
+          Current Recommendations
         </Text>
-        <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
-          <Text style={[styles.placeholderText, { color: colors.gray || COLORS.gray }]}>
-            No medications recorded
-          </Text>
-        </View>
+        {reportData?.riskAssessment?.recommendations && reportData.riskAssessment.recommendations.length > 0 ? (
+          <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
+            {reportData.riskAssessment.recommendations.slice(0, 3).map((rec, index) => (
+              <View 
+                key={index} 
+                style={[
+                  styles.recommendationItem,
+                  index === reportData.riskAssessment!.recommendations.slice(0, 3).length - 1 && styles.lastItem
+                ]}
+              >
+                <View style={[
+                  styles.priorityDot,
+                  { backgroundColor: PatientReportUtils.getPriorityColor(rec.priority, colors) }
+                ]} />
+                <View style={styles.recommendationContent}>
+                  <Text style={[styles.recommendationType, { color: colors.text || COLORS.text }]}>
+                    {rec.type}
+                  </Text>
+                  <Text style={[styles.recommendationDescription, { color: colors.gray || COLORS.gray }]}>
+                    {rec.description}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
+            <Text style={[styles.placeholderText, { color: colors.gray || COLORS.gray }]}>
+              {patientId && isLoading(patientId) ? 'Loading recommendations...' : 'No recommendations available'}
+            </Text>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -313,5 +403,104 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  riskContainer: {
+    alignItems: 'flex-end',
+  },
+  loadingIndicator: {
+    marginBottom: SIZES.base / 2,
+  },
+  riskScore: {
+    fontSize: SIZES.small,
+    marginTop: SIZES.base / 2,
+  },
+  vitalsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  vitalItem: {
+    width: '50%',
+    marginBottom: SIZES.medium,
+  },
+  vitalValue: {
+    fontSize: SIZES.font,
+    fontWeight: 'bold',
+    marginTop: SIZES.base / 2,
+  },
+  subSectionTitle: {
+    fontSize: SIZES.font,
+    fontWeight: '600',
+    marginTop: SIZES.medium,
+    marginBottom: SIZES.base,
+  },
+  riskFactorsContainer: {
+    marginTop: SIZES.base,
+  },
+  riskFactor: {
+    fontSize: SIZES.small,
+    marginBottom: SIZES.base / 2,
+  },
+  complicationItem: {
+    marginBottom: SIZES.medium,
+    paddingBottom: SIZES.medium,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  complicationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SIZES.base / 2,
+  },
+  complicationName: {
+    fontSize: SIZES.font,
+    fontWeight: '600',
+    flex: 1,
+  },
+  probabilityBadge: {
+    paddingHorizontal: SIZES.base,
+    paddingVertical: SIZES.base / 2,
+    borderRadius: SIZES.base / 2,
+  },
+  probabilityText: {
+    fontSize: SIZES.small,
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  complicationDescription: {
+    fontSize: SIZES.small,
+    lineHeight: SIZES.font * 1.3,
+  },
+  recommendationItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: SIZES.medium,
+    paddingBottom: SIZES.medium,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  priorityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 6,
+    marginRight: SIZES.base,
+  },
+  recommendationContent: {
+    flex: 1,
+  },
+  recommendationType: {
+    fontSize: SIZES.font,
+    fontWeight: '600',
+    marginBottom: SIZES.base / 2,
+  },
+  recommendationDescription: {
+    fontSize: SIZES.small,
+    lineHeight: SIZES.font * 1.3,
+  },
+  lastItem: {
+    borderBottomWidth: 0,
+    marginBottom: 0,
+    paddingBottom: 0,
   },
 });

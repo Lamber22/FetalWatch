@@ -11,6 +11,7 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { PatientsProvider } from '../contexts/PatientsContext';
 import { AppointmentProvider } from '@/contexts/AppointmentContext';
 import { ReportsProvider } from '@/contexts/ReportsContext';
+import { RecordProvider } from '../contexts/RecordContext';
 import { DoctorProvider } from '../contexts/DoctorContext';
 import { UserProvider } from '../contexts/UserContext';
 
@@ -56,9 +57,10 @@ function RootLayoutNav() {
         <AuthProvider>
           <UserProvider>
             <ReportsProvider>
-              <AppointmentProvider>
-                <PatientsProvider>
-                  <DoctorProvider>
+              <RecordProvider>
+                <AppointmentProvider>
+                  <PatientsProvider>
+                    <DoctorProvider>
                     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                       <Stack
                         screenOptions={{
@@ -73,8 +75,9 @@ function RootLayoutNav() {
                   </DoctorProvider>
                 </PatientsProvider>
               </AppointmentProvider>
-            </ReportsProvider>
-          </UserProvider>
+            </RecordProvider>
+          </ReportsProvider>
+        </UserProvider>
         </AuthProvider>
       </CustomThemeProvider>
     </ErrorBoundary>

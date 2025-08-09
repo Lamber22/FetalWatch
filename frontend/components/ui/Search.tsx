@@ -3,6 +3,8 @@ import { View, TextInput, StyleSheet, Platform, TouchableOpacity, useColorScheme
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
+import { SIZES, SHADOWS } from '../constants/Theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface SearchFilterProps {
   search: string;
@@ -35,17 +37,8 @@ export default function SearchFilterBar({
   dateValue,
   setDateValue,
 }: SearchFilterProps) {
+  const { colors } = useTheme();
   const colorScheme = useColorScheme();
-  const theme = {
-    background: colorScheme === 'dark' ? '#181A20' : '#fff',
-    card: colorScheme === 'dark' ? '#23262F' : '#F5F6FA',
-    border: colorScheme === 'dark' ? '#333' : '#E2E8F0',
-    text: colorScheme === 'dark' ? '#fff' : '#333',
-    placeholder: colorScheme === 'dark' ? '#aaa' : '#888',
-    icon: colorScheme === 'dark' ? '#aaa' : '#888',
-    accent: '#5271FF',
-    shadow: colorScheme === 'dark' ? '#000' : '#000',
-  };
 
   const filteredRoles = userRole === 'healthProvider'
     ? roles.filter(r => r.value !== 'admin')
@@ -54,25 +47,25 @@ export default function SearchFilterBar({
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background, shadowColor: theme.shadow }]}> 
+    <View style={[styles.container, { backgroundColor: colors.background, shadowColor: colors.text }]}> 
       <View style={styles.inputRow}>
-        <View style={[styles.searchBox, { backgroundColor: theme.card, borderColor: theme.border }]}> 
-          <Ionicons name="search" size={18} color={theme.icon} style={{ marginRight: 6 }} />
+        <View style={[styles.searchBox, { backgroundColor: colors.white, borderColor: colors.gray }]}> 
+          <Ionicons name="search" size={18} color={colors.gray} style={{ marginRight: SIZES.base - 2 }} />
           <TextInput
-            style={[styles.input, { color: theme.text }]}
+            style={[styles.input, { color: colors.text }]}
             placeholder="Search..."
             value={search}
             onChangeText={setSearch}
-            placeholderTextColor={theme.placeholder}
+            placeholderTextColor={colors.gray}
             clearButtonMode="while-editing"
           />
         </View>
-        <View style={[styles.pickerBox, { backgroundColor: theme.card, borderColor: theme.border }]}> 
+        <View style={[styles.pickerBox, { backgroundColor: colors.white, borderColor: colors.gray }]}> 
           <Picker
             selectedValue={filterRole}
-            style={[styles.picker, { color: theme.text }]}
+            style={[styles.picker, { color: colors.text }]}
             onValueChange={setFilterRole}
-            dropdownIconColor={theme.accent}
+            dropdownIconColor={colors.primary}
           >
             {filteredRoles.map(role => (
               <Picker.Item key={role.label} label={role.label} value={role.value} />
@@ -80,25 +73,25 @@ export default function SearchFilterBar({
           </Picker>
         </View>
         <TouchableOpacity
-          style={[styles.dateButton, { backgroundColor: theme.card, borderColor: theme.border }]}
+          style={[styles.dateButton, { backgroundColor: colors.white, borderColor: colors.gray }]}
           onPress={() => setShowDatePicker(true)}
         >
-          <Ionicons name="calendar-outline" size={18} color={theme.accent} />
+          <Ionicons name="calendar-outline" size={18} color={colors.primary} />
         </TouchableOpacity>
         {showDatePicker && (
           Platform.OS === 'web' ? (
             <input
               type="date"
               style={{
-                marginLeft: 8,
+                marginLeft: SIZES.base,
                 height: 40,
-                borderRadius: 8,
-                border: `1px solid ${theme.border}`,
-                padding: 6,
+                borderRadius: SIZES.radius,
+                border: `1px solid ${colors.gray}`,
+                padding: SIZES.base - 2,
                 outline: 'none',
-                fontSize: 16,
-                background: theme.card,
-                color: theme.text,
+                fontSize: SIZES.medium,
+                background: colors.white,
+                color: colors.text,
               }}
               value={dateValue ? dateValue.toISOString().split('T')[0] : ''}
               onChange={e => {
@@ -127,36 +120,34 @@ export default function SearchFilterBar({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 8,
-    borderRadius: 10,
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    marginBottom: 12,
+    padding: SIZES.base,
+    borderRadius: SIZES.base + 2,
+    marginBottom: SIZES.base + 4,
+    ...SHADOWS.light,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: SIZES.base,
   },
   searchBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    borderRadius: SIZES.radius,
+    paddingHorizontal: SIZES.base + 2,
     borderWidth: 1,
     height: 40,
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: SIZES.medium,
     backgroundColor: 'transparent',
     borderWidth: 0,
   },
   pickerBox: {
     minWidth: 110,
-    borderRadius: 8,
+    borderRadius: SIZES.radius,
     borderWidth: 1,
     height: 40,
     justifyContent: 'center',
@@ -167,7 +158,7 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     marginLeft: 4,
-    borderRadius: 8,
+    borderRadius: SIZES.radius,
     borderWidth: 1,
     height: 40,
     width: 40,

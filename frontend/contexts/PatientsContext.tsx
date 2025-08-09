@@ -1,31 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { patientService } from '../services/PatientService';
-
-interface Patient {
-  _id?: string;
-  name: string;
-  dateOfBirth?: string;
-  gender?: string;
-  address?: string;
-  contact?: string;
-  weekOfPregnancy?: number;
-  expectedDeliveryDate?: string;
-  createdAt?: string;
-}
-
-interface PatientsContextType {
-  patients: Patient[];
-  selectedPatient: Patient | null;
-  loading: boolean;
-  error: string | null;
-  fetchPatients: () => Promise<void>;
-  getPatient: (id: string) => Promise<void>;
-  createPatient: (data: Omit<Patient, '_id'>) => Promise<void>;
-  updatePatient: (id: string, data: Partial<Patient>) => Promise<void>;
-  deletePatient: (id: string) => Promise<void>;
-  setSelectedPatient: (patient: Patient | null) => void;
-  clearError: () => void;
-}
+import { Patient, PatientsContextType } from '../interface/iPatient';
 
 const PatientsContext = createContext<PatientsContextType | undefined>(undefined);
 

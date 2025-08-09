@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
+import { COLORS, SIZES, SHADOWS, lightTheme, darkTheme } from '../constants/Theme';
+import { useColorScheme } from '../../hooks/useColorScheme';
 import { usePatients } from '../../contexts/PatientsContext';
 
 interface AddPatientProps {
@@ -23,16 +24,21 @@ interface AddPatientProps {
 
 export default function AddPatient({ onSuccess, onCancel }: AddPatientProps) {
   const { createPatient, loading, error } = usePatients();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const theme = isDark ? darkTheme : lightTheme;
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showDeliveryDatePicker, setShowDeliveryDatePicker] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     dateOfBirth: '',
     gender: '',
     address: '',
     contact: '',
-    weekOfPregnancy: '',
-    expectedDeliveryDate: '',
+    emergencyContact: {
+      name: '',
+      contactNumber: '',
+      location: ''
+    }
   });
 
   const formatDate = (date: Date) => {
@@ -44,14 +50,6 @@ export default function AddPatient({ onSuccess, onCancel }: AddPatientProps) {
     if (selectedDate) {
       const formattedDate = formatDate(selectedDate);
       setFormData({ ...formData, dateOfBirth: formattedDate });
-    }
-  };
-
-  const handleDeliveryDateChange = (event: any, selectedDate?: Date) => {
-    setShowDeliveryDatePicker(false);
-    if (selectedDate) {
-      const formattedDate = formatDate(selectedDate);
-      setFormData({ ...formData, expectedDeliveryDate: formattedDate });
     }
   };
 
@@ -89,10 +87,6 @@ export default function AddPatient({ onSuccess, onCancel }: AddPatientProps) {
       Alert.alert('Validation Error', 'Please enter contact number');
       return false;
     }
-    if (formData.weekOfPregnancy && (isNaN(parseInt(formData.weekOfPregnancy, 10)) || parseInt(formData.weekOfPregnancy, 10) < 1 || parseInt(formData.weekOfPregnancy, 10) > 42)) {
-      Alert.alert('Validation Error', 'Week of pregnancy must be between 1 and 42');
-      return false;
-    }
     return true;
   };
 
@@ -108,15 +102,15 @@ export default function AddPatient({ onSuccess, onCancel }: AddPatientProps) {
         contact: formData.contact.trim(),
       };
 
-      if (formData.weekOfPregnancy && formData.weekOfPregnancy.trim() !== '') {
-        const week = parseInt(formData.weekOfPregnancy, 10);
-        if (!isNaN(week) && week >= 1 && week <= 42) {
-          patientData.weekOfPregnancy = week;
-        }
-      }
-
-      if (formData.expectedDeliveryDate && formData.expectedDeliveryDate.trim() !== '') {
-        patientData.expectedDeliveryDate = formData.expectedDeliveryDate;
+      // Include emergency contact if any field is filled
+      if (formData.emergencyContact.name.trim() || 
+          formData.emergencyContact.contactNumber.trim() || 
+          formData.emergencyContact.location.trim()) {
+        patientData.emergencyContact = {
+          name: formData.emergencyContact.name.trim(),
+          contactNumber: formData.emergencyContact.contactNumber.trim(),
+          location: formData.emergencyContact.location.trim()
+        };
       }
 
       await createPatient(patientData);
@@ -160,44 +154,44 @@ export default function AddPatient({ onSuccess, onCancel }: AddPatientProps) {
     }
   };
 
-  const handleDeliveryDatePress = () => {
-    if (Platform.OS === 'ios') {
-      setShowDeliveryDatePicker(!showDeliveryDatePicker);
-    } else {
-      setShowDeliveryDatePicker(true);
-    }
-  };
-
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.sectionTitle}>Personal Information</Text>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} showsVerticalScrollIndicator={false}>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Personal Information</Text>
       
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Full Name *</Text>
+        <Text style={[styles.inputLabel, { color: theme.text }]}>Full Name *</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: theme.white, borderColor: theme.border, color: theme.text }]}
           placeholder="Enter full name"
+          placeholderTextColor={theme.gray}
           value={formData.name}
           onChangeText={(text) => setFormData({ ...formData, name: text })}
         />
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Date of Birth *</Text>
+        <Text style={[styles.inputLabel, { color: theme.text }]}>Date of Birth *</Text>
         <TouchableWithoutFeedback onPress={handleDateOfBirthPress}>
-          <View style={[styles.input, showDatePicker && Platform.OS === 'ios' && styles.inputFocused]}>
-            <Text style={formData.dateOfBirth ? styles.inputText : styles.placeholderText}>
+          <View style={[
+            styles.input, 
+            { backgroundColor: theme.white, borderColor: theme.border },
+            showDatePicker && Platform.OS === 'ios' && styles.inputFocused
+          ]}>
+            <Text style={formData.dateOfBirth ? [styles.inputText, { color: theme.text }] : [styles.placeholderText, { color: theme.gray }]}>
               {formData.dateOfBirth || 'Select Date of Birth'}
             </Text>
             {Platform.OS === 'ios' && (
-              <Text style={styles.iosPickerIcon}>
+              <Text style={[styles.iosPickerIcon, { color: theme.gray }]}>
                 {showDatePicker ? '▲' : '▼'}
               </Text>
             )}
           </View>
         </TouchableWithoutFeedback>
         {showDatePicker && (
-          <View style={Platform.OS === 'ios' ? styles.iosDatePickerContainer : undefined}>
+          <View style={[
+            Platform.OS === 'ios' ? styles.iosDatePickerContainer : undefined,
+            { backgroundColor: theme.white, borderColor: theme.border }
+          ]}>
             <DateTimePicker
               value={formData.dateOfBirth ? new Date(formData.dateOfBirth) : new Date()}
               mode="date"
@@ -211,40 +205,43 @@ export default function AddPatient({ onSuccess, onCancel }: AddPatientProps) {
       </View>
 
       {formData.dateOfBirth ? (
-        <Text style={styles.ageText}>
+        <Text style={[styles.ageText, { color: theme.gray }]}>
           Age: {calculateAge(formData.dateOfBirth)} years old
         </Text>
       ) : null}
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Gender *</Text>
+        <Text style={[styles.inputLabel, { color: theme.text }]}>Gender *</Text>
         {Platform.OS === 'ios' ? (
-          <TouchableOpacity style={styles.input} onPress={handleGenderSelection}>
-            <Text style={formData.gender ? styles.inputText : styles.placeholderText}>
+          <TouchableOpacity style={[styles.input, { backgroundColor: theme.white, borderColor: theme.border }]} onPress={handleGenderSelection}>
+            <Text style={formData.gender ? [styles.inputText, { color: theme.text }] : [styles.placeholderText, { color: theme.gray }]}>
               {formData.gender || 'Select Gender'}
             </Text>
           </TouchableOpacity>
         ) : (
-          <View style={styles.input}>
+          <View style={[styles.input, { backgroundColor: theme.white, borderColor: theme.border }]}>
             <Picker
               selectedValue={formData.gender}
               onValueChange={(itemValue: any) => setFormData({ ...formData, gender: itemValue })}
-              style={styles.picker}
+              style={[styles.picker, { color: theme.text, backgroundColor: theme.white }]}
+              dropdownIconColor={theme.gray}
+              mode="dropdown"
             >
-              <Picker.Item label="Select Gender" value="" />
-              <Picker.Item label="Female" value="Female" />
-              <Picker.Item label="Male" value="Male" />
-              <Picker.Item label="Other" value="Other" />
+              <Picker.Item label="Select Gender" value="" color={theme.text} />
+              <Picker.Item label="Female" value="Female" color={theme.text} />
+              <Picker.Item label="Male" value="Male" color={theme.text} />
+              <Picker.Item label="Other" value="Other" color={theme.text} />
             </Picker>
           </View>
         )}
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Address *</Text>
+        <Text style={[styles.inputLabel, { color: theme.text }]}>Address *</Text>
         <TextInput
-          style={[styles.input, styles.multilineInput]}
+          style={[styles.input, styles.multilineInput, { backgroundColor: theme.white, borderColor: theme.border, color: theme.text }]}
           placeholder="Enter address"
+          placeholderTextColor={theme.gray}
           value={formData.address}
           onChangeText={(text) => setFormData({ ...formData, address: text })}
           multiline
@@ -253,73 +250,83 @@ export default function AddPatient({ onSuccess, onCancel }: AddPatientProps) {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Contact Number *</Text>
+        <Text style={[styles.inputLabel, { color: theme.text }]}>Contact Number *</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: theme.white, borderColor: theme.border, color: theme.text }]}
           placeholder="Enter contact number"
+          placeholderTextColor={theme.gray}
           value={formData.contact}
           onChangeText={(text) => setFormData({ ...formData, contact: text })}
           keyboardType="phone-pad"
         />
       </View>
 
-      <Text style={[styles.sectionTitle, { marginTop: SIZES.medium }]}>
-        Pregnancy Information
-      </Text>
-
+      <Text style={[styles.sectionTitle, { color: theme.text, marginTop: SIZES.large }]}>Emergency Contact</Text>
+      
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Week of Pregnancy</Text>
+        <Text style={[styles.inputLabel, { color: theme.text }]}>Emergency Contact Name</Text>
         <TextInput
-          style={styles.input}
-          placeholder="Enter week of pregnancy (1-42)"
-          value={formData.weekOfPregnancy}
-          onChangeText={(text) => {
-            const numericText = text.replace(/[^0-9]/g, '');
-            setFormData({ ...formData, weekOfPregnancy: numericText });
-          }}
-          keyboardType="numeric"
-          maxLength={2}
+          style={[styles.input, { backgroundColor: theme.white, borderColor: theme.border, color: theme.text }]}
+          placeholder="Enter emergency contact name"
+          placeholderTextColor={theme.gray}
+          value={formData.emergencyContact.name}
+          onChangeText={(text) => setFormData({ 
+            ...formData, 
+            emergencyContact: { ...formData.emergencyContact, name: text }
+          })}
         />
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Expected Delivery Date</Text>
-        <TouchableWithoutFeedback onPress={handleDeliveryDatePress}>
-          <View style={[styles.input, showDeliveryDatePicker && Platform.OS === 'ios' && styles.inputFocused]}>
-            <Text style={formData.expectedDeliveryDate ? styles.inputText : styles.placeholderText}>
-              {formData.expectedDeliveryDate || 'Select Expected Delivery Date'}
-            </Text>
-            {Platform.OS === 'ios' && (
-              <Text style={styles.iosPickerIcon}>
-                {showDeliveryDatePicker ? '▲' : '▼'}
-              </Text>
-            )}
-          </View>
-        </TouchableWithoutFeedback>
-        {showDeliveryDatePicker && (
-          <View style={Platform.OS === 'ios' ? styles.iosDatePickerContainer : undefined}>
-            <DateTimePicker
-              value={formData.expectedDeliveryDate ? new Date(formData.expectedDeliveryDate) : new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'compact' : 'default'}
-              onChange={handleDeliveryDateChange}
-              minimumDate={new Date()}
-              style={Platform.OS === 'ios' ? styles.iosDatePicker : undefined}
-            />
-          </View>
-        )}
+        <Text style={[styles.inputLabel, { color: theme.text }]}>Emergency Contact Number</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: theme.white, borderColor: theme.border, color: theme.text }]}
+          placeholder="Enter emergency contact number"
+          placeholderTextColor={theme.gray}
+          value={formData.emergencyContact.contactNumber}
+          onChangeText={(text) => setFormData({ 
+            ...formData, 
+            emergencyContact: { ...formData.emergencyContact, contactNumber: text }
+          })}
+          keyboardType="phone-pad"
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={[styles.inputLabel, { color: theme.text }]}>Emergency Contact Location</Text>
+        <TextInput
+          style={[styles.input, styles.multilineInput, { backgroundColor: theme.white, borderColor: theme.border, color: theme.text }]}
+          placeholder="Enter emergency contact location/address"
+          placeholderTextColor={theme.gray}
+          value={formData.emergencyContact.location}
+          onChangeText={(text) => setFormData({ 
+            ...formData, 
+            emergencyContact: { ...formData.emergencyContact, location: text }
+          })}
+          multiline
+          numberOfLines={2}
+        />
       </View>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.button, styles.cancelButton]}
+          style={[
+            styles.button, 
+            styles.cancelButton,
+            { backgroundColor: theme.white, borderColor: theme.gray }
+          ]}
           onPress={onCancel}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>Cancel</Text>
+          <Text style={[styles.buttonText, { color: theme.text }]}>Cancel</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.button, styles.submitButton, loading && styles.disabledButton]}
+          style={[
+            styles.button, 
+            styles.submitButton, 
+            { backgroundColor: theme.primary },
+            loading && styles.disabledButton
+          ]}
           onPress={handleSubmit}
           disabled={loading}
         >
@@ -339,7 +346,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: SIZES.large,
     fontWeight: 'bold',
-    color: COLORS.text,
     marginBottom: SIZES.medium,
   },
   inputGroup: {
@@ -348,16 +354,13 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: SIZES.font,
     fontWeight: '600',
-    color: COLORS.text,
     marginBottom: SIZES.base,
   },
   input: {
-    backgroundColor: COLORS.white,
     borderRadius: SIZES.base,
     padding: SIZES.medium,
     fontSize: SIZES.font,
     borderWidth: 1,
-    borderColor: COLORS.border,
     justifyContent: 'center',
     flexDirection: 'row',
     alignItems: 'center',
@@ -368,16 +371,13 @@ const styles = StyleSheet.create({
   },
   iosPickerIcon: {
     fontSize: SIZES.font,
-    color: COLORS.gray,
     marginLeft: 'auto',
   },
   iosDatePickerContainer: {
-    backgroundColor: COLORS.white,
     borderRadius: SIZES.base,
     marginTop: SIZES.small,
     padding: SIZES.small,
     borderWidth: 1,
-    borderColor: COLORS.border,
     ...SHADOWS.light,
   },
   iosDatePicker: {
@@ -403,9 +403,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.light,
   },
   cancelButton: {
-    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: COLORS.gray,
   },
   submitButton: {
     backgroundColor: COLORS.primary,
@@ -413,18 +411,15 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: SIZES.medium,
     fontWeight: 'bold',
-    color: COLORS.text,
   },
   submitButtonText: {
     color: COLORS.white,
   },
   placeholderText: {
     fontSize: SIZES.font,
-    color: COLORS.gray,
   },
   ageText: {
     fontSize: SIZES.small,
-    color: COLORS.gray,
     marginTop: -SIZES.small,
     marginBottom: SIZES.medium,
     marginLeft: SIZES.small,
@@ -432,16 +427,15 @@ const styles = StyleSheet.create({
   picker: {
     height: 50,
     width: '100%',
+    marginVertical: -8, // Adjust for better alignment
   },
   disabledButton: {
     opacity: 0.6,
   },
   inputText: {
     fontSize: SIZES.font,
-    color: COLORS.text,
   },
   iosPicker: {
-    backgroundColor: COLORS.white,
     borderRadius: SIZES.base,
     marginTop: SIZES.small,
   },

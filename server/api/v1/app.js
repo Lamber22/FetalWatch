@@ -11,6 +11,8 @@ import labResultRouter from "./routes/labResultRoute.js";
 import fetalRouter from "./routes/fetalRoute.js";
 import appointmentRouter from "./routes/appointmentRoute.js";
 import doctorRouter from "./routes/doctorRoute.js";
+import recordRouter from "./routes/recordRoutes.js";
+import reportRouter from "./routes/reportRoutes.js";
 
 const app = express();
 
@@ -35,5 +37,7 @@ app.use("/api/v1/labResults", labResultRouter);
 app.use("/api/v1/fetalwatch", fetalRouter);
 app.use("/api/v1/appointments", appointmentRouter);
 app.use("/api/v1/doctors", doctorRouter);
+app.use("/api/v1/records", recordRouter);
+app.use("/api/v1/reports", reportRouter);
 
 export default app;

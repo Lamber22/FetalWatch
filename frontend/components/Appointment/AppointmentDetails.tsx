@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
 import { useTheme } from '../../contexts/ThemeContext';
 import Modal from '../ui/Modal';
 import PatientDetailsView from '../Patients/PatientDetailsView';
+import { usePatientReports, PatientReportUtils } from '../../hooks/usePatientReports';
 
 interface AppointmentDetailsProps {
   appointment: any;
@@ -15,6 +16,54 @@ interface AppointmentDetailsProps {
 export default function AppointmentDetails({ appointment, onEdit, onCancel }: AppointmentDetailsProps) {
   const { colors } = useTheme();
   const [showPatientModal, setShowPatientModal] = useState(false);
+  
+  // Use the patient reports hook
+  const { 
+    loadPatientReports, 
+    isLoading, 
+    hasData, 
+    patientReports 
+  } = usePatientReports();
+
+  const patientId = appointment?.patientId || appointment?.patient?._id;
+  
+  // Ensure patientId is a string and not an object
+  const validPatientId = (() => {
+    if (typeof patientId === 'string' && patientId.trim() !== '') {
+      return patientId;
+    }
+    if (typeof patientId === 'object' && patientId?._id && typeof patientId._id === 'string') {
+      return patientId._id;
+    }
+    
+    // Additional fallback checks
+    if (appointment?.patient && typeof appointment.patient === 'object') {
+      if (typeof appointment.patient._id === 'string') {
+        return appointment.patient._id;
+      }
+      if (typeof appointment.patient.id === 'string') {
+        return appointment.patient.id;
+      }
+    }
+    
+    console.warn('AppointmentDetails: Could not extract valid patient ID from:', { 
+      patientId, 
+      appointmentPatient: appointment?.patient,
+      appointmentPatientId: appointment?.patientId 
+    });
+    return null;
+  })();
+  
+  const reportData = validPatientId ? patientReports[validPatientId] : null;
+
+  // Load patient reports when component mounts
+  useEffect(() => {
+    if (validPatientId && !hasData(validPatientId)) {
+      loadPatientReports(validPatientId).catch((error) => {
+        console.error('Failed to load patient reports in AppointmentDetails:', error);
+      });
+    }
+  }, [validPatientId, hasData, loadPatientReports]);
 
   // Use the passed appointment prop instead of mock data
   if (!appointment) {
@@ -182,7 +231,7 @@ export default function AppointmentDetails({ appointment, onEdit, onCancel }: Ap
                     Blood Pressure
                   </Text>
                   <Text style={[styles.vitalValue, { color: colors.text || COLORS.text }]}>
-                    {appointment.vitals.bloodPressure || 'N/A'}
+                    {PatientReportUtils.formatBloodPressure(appointment.vitals.bloodPressure) || 'N/A'}
                   </Text>
                 </View>
                 <View style={styles.vitalItem}>
@@ -210,6 +259,105 @@ export default function AppointmentDetails({ appointment, onEdit, onCancel }: Ap
                   </Text>
                 </View>
               </View>
+            </View>
+          </View>
+        )}
+
+        {/* Risk Assessment (from patient reports) */}
+        {validPatientId && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text || COLORS.text }]}>
+                Risk Assessment
+              </Text>
+              {isLoading(validPatientId) && (
+                <ActivityIndicator size="small" color={colors.primary || COLORS.primary} />
+              )}
+            </View>
+            
+            {reportData?.riskAssessment ? (
+              <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
+                <View style={styles.riskHeader}>
+                  <View style={[
+                    styles.riskLevelBadge,
+                    { backgroundColor: PatientReportUtils.getRiskLevelColor(reportData.riskAssessment.riskLevel, colors) }
+                  ]}>
+                    <Text style={styles.riskLevelText}>
+                      {reportData.riskAssessment.riskLevel || 'Unknown'} Risk
+                    </Text>
+                  </View>
+                  <Text style={[styles.riskScore, { color: colors.text || COLORS.text }]}>
+                    Score: {reportData.riskAssessment.riskScore || 'N/A'}
+                  </Text>
+                </View>
+                
+                {reportData.riskAssessment.recommendations && reportData.riskAssessment.recommendations.length > 0 && (
+                  <View style={styles.recommendationsContainer}>
+                    <Text style={[styles.recommendationsTitle, { color: colors.text || COLORS.text }]}>
+                      Recommendations:
+                    </Text>
+                    {reportData.riskAssessment.recommendations.slice(0, 3).map((rec, index) => (
+                      <View key={index} style={styles.recommendationItem}>
+                        <View style={[
+                          styles.priorityDot,
+                          { backgroundColor: PatientReportUtils.getPriorityColor(rec.priority, colors) }
+                        ]} />
+                        <Text style={[styles.recommendationText, { color: colors.text || COLORS.text }]}>
+                          {rec.description}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ) : !isLoading(validPatientId) ? (
+              <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
+                <Text style={[styles.noDataText, { color: colors.gray || COLORS.gray }]}>
+                  No risk assessment data available
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        )}
+
+        {/* Potential Complications */}
+        {validPatientId && reportData?.complications && reportData.complications.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text || COLORS.text }]}>
+              Potential Complications
+            </Text>
+            <View style={[styles.card, { backgroundColor: colors.white || COLORS.white }]}>
+              {reportData.complications.slice(0, 3).map((complication, index) => {
+                const complicationsArray = reportData.complications!; // Safe assertion since we checked above
+                return (
+                  <View 
+                    key={index} 
+                    style={[
+                      styles.complicationItem,
+                      index === complicationsArray.slice(0, 3).length - 1 && styles.lastComplicationItem
+                    ]}
+                  >
+                    <View style={styles.complicationHeader}>
+                      <Text style={[styles.complicationName, { color: colors.text || COLORS.text }]}>
+                        {complication.name}
+                      </Text>
+                      <View style={[
+                        styles.probabilityBadge,
+                        { backgroundColor: PatientReportUtils.getProbabilityColor(complication.probability, colors) }
+                      ]}>
+                        <Text style={styles.probabilityText}>
+                          {complication.probability}
+                        </Text>
+                      </View>
+                    </View>
+                    {complication.description && (
+                      <Text style={[styles.complicationDescription, { color: colors.gray || COLORS.gray }]}>
+                        {complication.description}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           </View>
         )}
@@ -255,7 +403,7 @@ export default function AppointmentDetails({ appointment, onEdit, onCancel }: Ap
       >
         <PatientDetailsView 
           patient={appointment.patient || { 
-            _id: appointment.patientId,
+            _id: validPatientId,
             name: appointment.patientName 
           }} 
         />
@@ -408,5 +556,96 @@ const styles = StyleSheet.create({
     fontSize: SIZES.font,
     fontWeight: 'bold',
     color: COLORS.white,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SIZES.medium,
+  },
+  riskHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SIZES.medium,
+  },
+  riskLevelBadge: {
+    paddingHorizontal: SIZES.medium,
+    paddingVertical: SIZES.base,
+    borderRadius: SIZES.base,
+  },
+  riskLevelText: {
+    fontSize: SIZES.font,
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  riskScore: {
+    fontSize: SIZES.font,
+    fontWeight: '600',
+  },
+  recommendationsContainer: {
+    marginTop: SIZES.base,
+  },
+  recommendationsTitle: {
+    fontSize: SIZES.font,
+    fontWeight: '600',
+    marginBottom: SIZES.base,
+  },
+  recommendationItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: SIZES.base,
+  },
+  priorityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 6,
+    marginRight: SIZES.base,
+  },
+  recommendationText: {
+    fontSize: SIZES.small,
+    flex: 1,
+    lineHeight: SIZES.font * 1.3,
+  },
+  complicationItem: {
+    marginBottom: SIZES.medium,
+    paddingBottom: SIZES.medium,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  lastComplicationItem: {
+    borderBottomWidth: 0,
+    marginBottom: 0,
+  },
+  complicationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SIZES.base / 2,
+  },
+  complicationName: {
+    fontSize: SIZES.font,
+    fontWeight: '600',
+    flex: 1,
+  },
+  probabilityBadge: {
+    paddingHorizontal: SIZES.base,
+    paddingVertical: SIZES.base / 2,
+    borderRadius: SIZES.base / 2,
+  },
+  probabilityText: {
+    fontSize: SIZES.small,
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  complicationDescription: {
+    fontSize: SIZES.small,
+    lineHeight: SIZES.font * 1.3,
+  },
+  noDataText: {
+    fontSize: SIZES.font,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 }); 

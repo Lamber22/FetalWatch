@@ -45,7 +45,7 @@ export const createPatient = async (req, res) => {
 
         // Validate required fields
         const {
-            name, dateOfBirth, gender, address, contact, weekOfPregnancy, expectedDeliveryDate
+            name, dateOfBirth, gender, address, contact, emergencyContact
         } = req.body;
 
         if (!name || !dateOfBirth || !gender || !address || !contact) {
@@ -66,28 +66,7 @@ export const createPatient = async (req, res) => {
             });
         }
 
-        // Validate week of pregnancy if provided
-        if (weekOfPregnancy !== undefined && weekOfPregnancy !== null && weekOfPregnancy !== '') {
-            const week = Number(weekOfPregnancy);
-            if (isNaN(week) || week < 1 || week > 42) {
-                return res.status(400).json({ 
-                    status: "failed",
-                    message: 'Week of pregnancy must be between 1 and 42' 
-                });
-            }
-        }
 
-        // Validate expected delivery date if provided
-        let deliveryDate;
-        if (expectedDeliveryDate) {
-            deliveryDate = new Date(expectedDeliveryDate);
-            if (isNaN(deliveryDate.getTime())) {
-                return res.status(400).json({ 
-                    status: "failed",
-                    message: 'Invalid date format for expectedDeliveryDate' 
-                });
-            }
-        }
 
         // Create patient data object
         const patientData = {
@@ -96,17 +75,16 @@ export const createPatient = async (req, res) => {
             dateOfBirth: birthDate,
             gender,
             address: address.trim(),
-            contact: contact.trim()
+            contact: contact.trim(),
+            // Include emergency contact if provided
+            ...(emergencyContact && { emergencyContact }),
+            // Include social history if provided
+            ...(req.body.socialHistory && { socialHistory: req.body.socialHistory }),
+            // Include habits if provided
+            ...(req.body.habits && { habits: req.body.habits })
         };
 
-        // Add optional fields only if they have valid values
-        if (weekOfPregnancy !== undefined && weekOfPregnancy !== null && weekOfPregnancy !== '') {
-            patientData.weekOfPregnancy = Number(weekOfPregnancy);
-        }
 
-        if (expectedDeliveryDate && deliveryDate) {
-            patientData.expectedDeliveryDate = deliveryDate;
-        }
 
         // Create and save patient
         const patient = new Patient(patientData);
@@ -144,6 +122,14 @@ export const getPatients = async (req, res) => {
         
         const patients = await Patient.find(query)
             .populate('facility', 'facilityName email')
+            .populate({
+                path: 'medicalRecords',
+                options: { sort: { date: -1, createdAt: -1 } },
+                populate: {
+                    path: 'createdBy',
+                    select: 'name email role'
+                }
+            })
             .sort({ createdAt: -1 });
             
         if (patients.length === 0) {
@@ -177,7 +163,15 @@ export const getPatientById = async (req, res) => {
         
         const patient = await Patient.findOne(query)
             .populate('facility', 'facilityName email')
-            .populate('pregnancies');
+            .populate('pregnancies')
+            .populate({
+                path: 'medicalRecords',
+                options: { sort: { date: -1, createdAt: -1 } },
+                populate: {
+                    path: 'createdBy',
+                    select: 'name email role'
+                }
+            });
             
         if (!patient) {
             return res.status(404).json({ 
@@ -204,19 +198,33 @@ export const getPatientById = async (req, res) => {
 export const updatePatient = async (req, res) => {
     try {
         const {
-            name, dateOfBirth, gender, address, contact, weekOfPregnancy, expectedDeliveryDate
+            name, dateOfBirth, gender, address, contact,
+            emergencyContact, socialHistory, habits
         } = req.body;
 
         // Create facility-based filter with patient ID
         const query = createFacilityFilter(req, { _id: req.params.patientId });
 
+        // Create update data object with only allowed fields
         const updateData = {
-            ...req.body,
+            ...(name && { name: name.trim() }),
+            ...(dateOfBirth && { dateOfBirth: new Date(dateOfBirth) }),
+            ...(gender && { gender }),
+            ...(address && { address: address.trim() }),
+            ...(contact && { contact: contact.trim() }),
+            // Include emergency contact if provided
+            ...(emergencyContact && { emergencyContact }),
+            // Include social history if provided
+            ...(socialHistory && { socialHistory }),
+            // Include habits if provided
+            ...(habits && { habits }),
             updatedAt: new Date()
         };
 
-        const patient = await Patient.findOneAndUpdate(query, updateData, { new: true })
-            .populate('facility', 'facilityName email');
+        const patient = await Patient.findOneAndUpdate(query, updateData, { 
+            new: true,
+            runValidators: true // This ensures model validations run on update
+        }).populate('facility', 'facilityName email');
             
         if (!patient) {
             return res.status(404).json({ 
@@ -287,6 +295,14 @@ export const managePatients = async (req, res) => {
 
         const patients = await Patient.find(query)
             .populate('facility', 'facilityName email')
+            .populate({
+                path: 'medicalRecords',
+                options: { sort: { date: -1, createdAt: -1 } },
+                populate: {
+                    path: 'createdBy',
+                    select: 'name email role'
+                }
+            })
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(Number(limit));

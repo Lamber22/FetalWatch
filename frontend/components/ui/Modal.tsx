@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
+import { COLORS, SIZES, SHADOWS, lightTheme, darkTheme } from '../constants/Theme';
 import { useColorScheme } from '../../hooks/useColorScheme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -40,6 +40,7 @@ export default function Modal({
 }: ModalProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const theme = isDark ? darkTheme : lightTheme;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
@@ -139,7 +140,7 @@ export default function Modal({
 
   const getModalStyle = () => {
     const baseStyle = {
-      backgroundColor: isDark ? '#181A20' : COLORS.white,
+      backgroundColor: theme.white,
       borderRadius: size === 'fullscreen' ? 0 : SIZES.radius * 2,
       ...SHADOWS.dark,
     };
@@ -212,7 +213,13 @@ export default function Modal({
       statusBarTranslucent={Platform.OS === 'android'}
     >
       <TouchableWithoutFeedback onPress={handleBackdropPress}>
-        <Animated.View style={[styles.overlay, { opacity: fadeAnim, backgroundColor: isDark ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.6)' }]}> 
+        <Animated.View style={[
+          styles.overlay, 
+          { 
+            opacity: fadeAnim, 
+            backgroundColor: isDark ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.6)' 
+          }
+        ]}> 
           <StatusBar
             backgroundColor={isDark ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.5)'}
             barStyle={isDark ? 'light-content' : 'dark-content'}
@@ -230,24 +237,32 @@ export default function Modal({
               ]}
             >
               {/* Header */}
-              <View style={[styles.header, { backgroundColor: isDark ? '#181A20' : COLORS.white, borderBottomColor: isDark ? '#22242A' : COLORS.border }]}> 
-                <Text style={[styles.title, { color: isDark ? '#fff' : COLORS.text }]} numberOfLines={1}>
+              <View style={[
+                styles.header, 
+                { 
+                  backgroundColor: theme.white, 
+                  borderBottomColor: theme.border 
+                }
+              ]}> 
+                <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
                   {title}
                 </Text>
                 {showCloseButton && (
                   <TouchableOpacity
-                    style={[styles.closeButton, { backgroundColor: isDark ? '#23242B' : COLORS.lightGray }]}
+                    style={[styles.closeButton, { backgroundColor: theme.lightGray }]}
                     onPress={onClose}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="close" size={24} color={isDark ? '#fff' : COLORS.gray} />
+                    <Ionicons name="close" size={24} color={theme.gray} />
                   </TouchableOpacity>
                 )}
               </View>
               {/* Content */}
-              <View style={[styles.content, { backgroundColor: isDark ? '#181A20' : COLORS.white }]}> 
-                {typeof children === 'string' ? <Text style={{ color: isDark ? '#fff' : COLORS.text }}>{children}</Text> : children}
+              <View style={[styles.content, { backgroundColor: theme.white }]}> 
+                {typeof children === 'string' ? (
+                  <Text style={{ color: theme.text }}>{children}</Text>
+                ) : children}
               </View>
             </Animated.View>
           </TouchableWithoutFeedback>
@@ -282,25 +297,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: SIZES.padding,
     paddingVertical: SIZES.medium,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.white,
     borderTopLeftRadius: SIZES.radius * 2,
     borderTopRightRadius: SIZES.radius * 2,
   },
   title: {
     fontSize: SIZES.large,
     fontWeight: 'bold',
-    color: COLORS.text,
     flex: 1,
     marginRight: SIZES.base,
   },
   closeButton: {
     padding: SIZES.base / 2,
     borderRadius: SIZES.radius,
-    backgroundColor: COLORS.lightGray,
   },
   content: {
-    backgroundColor: COLORS.white,
     borderBottomLeftRadius: SIZES.radius * 2,
     borderBottomRightRadius: SIZES.radius * 2,
     padding: SIZES.padding,

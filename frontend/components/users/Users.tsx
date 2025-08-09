@@ -5,6 +5,9 @@ import { ThemedText } from '../ThemedText';
 import Modal from '../ui/Modal';
 import AddUser from '../shared/AddUser';
 import SearchFilterBar from '../ui/Search';
+import { SIZES, SHADOWS } from '../constants/Theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 const UsersScreen: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -15,12 +18,16 @@ const UsersScreen: React.FC = () => {
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState<string | null>(null);
 
+  // Theme colors
+  const { colors } = useTheme();
+  const colorScheme = useColorScheme();
+
   const roles = [
     { label: 'All', value: null },
     { label: 'Doctor', value: 'doctor' },
     { label: 'Nurse', value: 'nurse' },
     { label: 'Midwife', value: 'midwife' },
-    { label: 'Health Provider', value: 'healthProvider' },
+    // { label: 'Health Provider', value: 'healthProvider' },
   ];
 
   useEffect(() => {
@@ -74,18 +81,25 @@ const UsersScreen: React.FC = () => {
   if (loading) return <ThemedText>Loading...</ThemedText>;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <View style={{ flex: 2 }} />
+        <View style={styles.titleContainer}>
+          <Image source={require('../../assets/logo/fetalwatch.png')} style={styles.logo} />
+          <Text style={styles.title} numberOfLines={1}>Users</Text>
+        </View>
+        <View style={{ flex: 2 }} />
+      </View>
       <View style={{ paddingHorizontal: 16 }}>
         <View style={{ alignItems: 'flex-end', marginBottom: 12 }}>
           <TouchableOpacity
-            style={styles.addUserButton}
+            style={[styles.addUserButton, { backgroundColor: colors.primary }]}
             onPress={openAddModal}
           >
             <Text style={styles.addUserButtonText}>+ Add User</Text>
           </TouchableOpacity>
         </View>
       </View>
-      <Text style={styles.header}>Users</Text>
       {/* Search and filter bar */}
       <SearchFilterBar
         search={search}
@@ -99,7 +113,7 @@ const UsersScreen: React.FC = () => {
         data={filteredUsers}
         keyExtractor={item => item.id || item._id || item.email}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => { openUserModal(item); }}>
+          <TouchableOpacity style={[styles.card, { backgroundColor: colors.white }]} onPress={() => { openUserModal(item); }}>
             <View style={styles.avatarWrapper}>
               <Image
                 source={item.profileImage ? { uri: item.profileImage } : require('../../assets/images/icon.png')}
@@ -107,15 +121,16 @@ const UsersScreen: React.FC = () => {
               />
             </View>
             <View style={styles.info}>
-              <Text style={styles.name}>{item.firstName} {item.lastName}</Text>
-              <Text style={styles.specialization}>{item.role}</Text>
-              <Text style={styles.email}>{item.email}</Text>
+              <Text style={[styles.name, { color: colors.text }]}>{item.firstName} {item.lastName}</Text>
+              <Text style={[styles.specialization, { color: colors.gray }]}>{item.role}</Text>
+              <Text style={[styles.email, { color: colors.gray }]}>{item.email}</Text>
+              <Text style={[styles.clickToView, { color: colors.primary }]}>Tap to view details</Text>
             </View>
           </TouchableOpacity>
         )
         }
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.emptyText}>No users found.</Text>}
+        ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.gray }]}>No users found.</Text>}
       />
       <Modal
         visible={addModalVisible}
@@ -152,16 +167,16 @@ const UsersScreen: React.FC = () => {
                 style={styles.modalAvatar}
               />
             </View>
-            <Text style={styles.modalSpecialization}>{selectedUser.role}</Text>
-            <Text style={styles.modalHospital}>{selectedUser.hospital?.name}</Text>
-            <Text style={styles.modalBio}>{selectedUser.bio || 'No bio available.'}</Text>
+            <Text style={[styles.modalSpecialization, { color: colors.gray }]}>{selectedUser.role}</Text>
+            <Text style={[styles.modalHospital, { color: colors.gray }]}>{selectedUser.hospital?.name}</Text>
+            <Text style={[styles.modalBio, { color: colors.text }]}>{selectedUser.bio || 'No bio available.'}</Text>
             <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>Contact</Text>
-              <Text style={styles.modalSectionText}>Email: {selectedUser.email}</Text>
-              <Text style={styles.modalSectionText}>Phone: {selectedUser.phone}</Text>
+              <Text style={[styles.modalSectionTitle, { color: colors.text }]}>Contact</Text>
+              <Text style={[styles.modalSectionText, { color: colors.gray }]}>Email: {selectedUser.email}</Text>
+              <Text style={[styles.modalSectionText, { color: colors.gray }]}>Phone: {selectedUser.phone}</Text>
             </View>
-            {selectedUser.createdAt && <Text style={styles.modalSectionText}>Created: {new Date(selectedUser.createdAt).toLocaleString()}</Text>}
-            {selectedUser.updatedAt && <Text style={styles.modalSectionText}>Updated: {new Date(selectedUser.updatedAt).toLocaleString()}</Text>}
+            {selectedUser.createdAt && <Text style={[styles.modalSectionText, { color: colors.gray }]}>Created: {new Date(selectedUser.createdAt).toLocaleString()}</Text>}
+            {selectedUser.updatedAt && <Text style={[styles.modalSectionText, { color: colors.gray }]}>Updated: {new Date(selectedUser.updatedAt).toLocaleString()}</Text>}
           </ScrollView>
         </Modal>
       )}
@@ -172,30 +187,44 @@ const UsersScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4f6fb',
-    paddingTop: 32,
   },
   header: {
-    fontSize: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 32,
+    height: 32,
+    marginRight: 8,
+    resizeMode: 'contain',
+  },
+  title: {
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-    color: '#2d3a4b',
-    letterSpacing: 1,
+    color: '#333',
+    flexShrink: 0,
   },
   searchBarWrapper: {
-    paddingHorizontal: 16,
-    marginBottom: 8,
+    paddingHorizontal: SIZES.padding,
+    marginBottom: SIZES.base,
   },
   searchBar: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#2d3a4b',
+    borderRadius: SIZES.radius * 2,
+    paddingHorizontal: SIZES.padding + 2,
+    paddingVertical: SIZES.base + 2,
+    fontSize: SIZES.medium,
     borderWidth: 1,
-    borderColor: '#e6eaf0',
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 4,
@@ -204,58 +233,50 @@ const styles = StyleSheet.create({
   },
   filterScroll: {
     maxHeight: 44,
-    marginBottom: 8,
+    marginBottom: SIZES.base,
   },
   filterChipsContainer: {
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: SIZES.base + 4,
   },
   chip: {
-    backgroundColor: '#f4f6fb',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
+    borderRadius: SIZES.radius * 2,
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.base,
+    marginRight: SIZES.base,
     borderWidth: 1,
-    borderColor: '#e6eaf0',
   },
   chipActive: {
     backgroundColor: '#2d3a4b',
     borderColor: '#2d3a4b',
   },
   chipText: {
-    color: '#7a869a',
     fontWeight: '600',
-    fontSize: 15,
+    fontSize: SIZES.small + 3,
   },
   chipTextActive: {
     color: '#fff',
   },
   list: {
-    paddingHorizontal: 12,
-    paddingBottom: 24,
+    paddingHorizontal: SIZES.base + 4,
+    paddingBottom: SIZES.padding + 8,
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 18,
+    borderRadius: SIZES.radius * 2 + 2,
+    padding: SIZES.padding + 2,
+    marginBottom: SIZES.padding + 2,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
     borderWidth: 1,
     borderColor: '#e6eaf0',
+    ...SHADOWS.light,
   },
   avatarWrapper: {
     width: 70,
     height: 70,
     borderRadius: 35,
     overflow: 'hidden',
-    marginRight: 18,
+    marginRight: SIZES.padding + 2,
     borderWidth: 2,
     borderColor: '#e6eaf0',
     backgroundColor: '#f4f6fb',
@@ -272,16 +293,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: 21,
+    fontSize: SIZES.large + 1,
     fontWeight: '700',
-    color: '#2d3a4b',
     marginBottom: 2,
   },
   specialization: {
-    fontSize: 16,
-    color: '#5a6b7b',
+    fontSize: SIZES.medium,
     fontWeight: '600',
-    marginBottom: 6,
+    marginBottom: SIZES.base - 2,
   },
   row: {
     flexDirection: 'row',
@@ -289,33 +308,32 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   dot: {
-    marginHorizontal: 6,
-    color: '#b0b8c1',
-    fontSize: 14,
+    marginHorizontal: SIZES.base - 2,
+    fontSize: SIZES.font,
   },
   hospital: {
-    fontSize: 15,
-    color: '#7a869a',
+    fontSize: SIZES.small + 3,
     fontWeight: '500',
   },
   experience: {
-    fontSize: 15,
-    color: '#7a869a',
+    fontSize: SIZES.small + 3,
     fontWeight: '500',
   },
   email: {
-    fontSize: 13,
-    color: '#8a99b0',
+    fontSize: SIZES.small + 1,
+  },
+  clickToView: {
+    fontSize: SIZES.extraSmall + 1,
+    fontStyle: 'italic',
+    marginTop: SIZES.base / 2,
   },
   phone: {
-    fontSize: 13,
-    color: '#8a99b0',
+    fontSize: SIZES.small + 1,
   },
   emptyText: {
     textAlign: 'center',
-    color: '#b0b8c1',
-    fontSize: 16,
-    marginTop: 32,
+    fontSize: SIZES.medium,
+    marginTop: SIZES.padding * 2,
   },
   centered: {
     flex: 1,
@@ -324,12 +342,12 @@ const styles = StyleSheet.create({
   },
   error: {
     color: 'red',
-    fontSize: 16,
+    fontSize: SIZES.medium,
   },
   modalAvatarWrapper: {
     alignSelf: 'center',
-    marginBottom: 12,
-    borderRadius: 48,
+    marginBottom: SIZES.base + 4,
+    borderRadius: SIZES.padding * 3,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: '#e6eaf0',
@@ -346,84 +364,74 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e0e0',
   },
   modalSpecialization: {
-    fontSize: 18,
-    color: '#5a6b7b',
+    fontSize: SIZES.medium + 2,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 2,
   },
   modalHospital: {
-    fontSize: 16,
-    color: '#7a869a',
+    fontSize: SIZES.medium,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: SIZES.base,
   },
   modalBio: {
-    fontSize: 15,
-    color: '#444',
+    fontSize: SIZES.small + 3,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: SIZES.base + 4,
   },
   modalSection: {
-    marginBottom: 12,
+    marginBottom: SIZES.base + 4,
   },
   modalSectionTitle: {
-    fontSize: 16,
+    fontSize: SIZES.medium,
     fontWeight: 'bold',
-    color: '#2d3a4b',
     marginBottom: 2,
   },
   modalSectionText: {
-    fontSize: 15,
-    color: '#5a6b7b',
+    fontSize: SIZES.small + 3,
     marginBottom: 2,
   },
   closeButton: {
-    backgroundColor: '#2d3a4b',
-    borderRadius: 16,
-    paddingVertical: 12,
-    marginTop: 16,
+    borderRadius: SIZES.radius * 2,
+    paddingVertical: SIZES.base + 4,
+    marginTop: SIZES.padding,
     alignItems: 'center',
   },
   closeButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: SIZES.medium,
     fontWeight: 'bold',
   },
   input: {
-    backgroundColor: '#f4f6fb',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#2d3a4b',
+    borderRadius: SIZES.base + 4,
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.base + 2,
+    fontSize: SIZES.medium,
     borderWidth: 1,
-    borderColor: '#e6eaf0',
-    marginBottom: 10,
+    marginBottom: SIZES.base + 2,
   },
   addButton: {
-    backgroundColor: '#2d3a4b',
-    borderRadius: 16,
-    paddingVertical: 14,
+    borderRadius: SIZES.radius * 2,
+    paddingVertical: SIZES.font,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: SIZES.base,
   },
   addButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: SIZES.medium,
     fontWeight: 'bold',
   },
   addUserButton: {
-    backgroundColor: '#5271FF',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
+    borderRadius: SIZES.base,
+    paddingVertical: SIZES.base,
+    paddingHorizontal: SIZES.large,
     marginBottom: 4,
+    ...SHADOWS.light,
   },
   addUserButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: SIZES.medium,
   },
 });
 

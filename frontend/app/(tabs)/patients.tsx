@@ -13,12 +13,17 @@ export default function PatientsTabsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={styles.header}>
-        <View style={{ flex: 1 }} />
+        <View style={{ flex: 2 }} />
         <View style={styles.titleContainer}>
           <Image source={require('../../assets/logo/fetalwatch.png')} style={styles.logo} />
-          <Text style={styles.title}>Patients & Appointments</Text>
+          <Text style={styles.title} numberOfLines={1}>Patients & Appointments</Text>
         </View>
-        <View style={{ flex: 1 }} />
+        <View style={{ flex: 2 }} />
+      </View>
+      <View style={styles.navigationHint}>
+        <Text style={[styles.hintText, { color: colors.gray }]}>
+          Tap on "Patients" or "Appointments" tabs below to switch between views
+        </Text>
       </View>
       <Tab.Navigator
         screenOptions={{
@@ -48,7 +53,6 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 2,
     justifyContent: 'center',
   },
   logo: {
@@ -61,5 +65,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
+    flexShrink: 0,
+  },
+  navigationHint: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  hintText: {
+    fontSize: 14,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
