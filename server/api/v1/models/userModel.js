@@ -42,16 +42,17 @@ const UserSchema = new Schema({
         }
     },
     facilityType: {
-        type: String,
-        enum: [
-            'Hospital',
-            'Clinic',
-            'Health Center',
-            'Maternity Home',
-            'Private Practice',
-            'Birthing Center',
-            'Other'
-        ]
+            type: String,
+            enum: [
+                'Hospital',
+                'Clinic',
+                'Health Center',
+                'Maternity Home',
+                'Private Practice',
+                'Birthing Center',
+                'Other'
+            ],
+            trim: true
     },
     facilityLicenseNumber: {
         type: String,
