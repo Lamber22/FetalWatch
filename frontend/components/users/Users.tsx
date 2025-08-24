@@ -238,6 +238,7 @@ const styles = StyleSheet.create({
   filterChipsContainer: {
     alignItems: 'center',
     paddingHorizontal: SIZES.base + 4,
+    boxShadow: '0px 2px 3px rgba(0,0,0,0.1)',
   },
   chip: {
     borderRadius: SIZES.radius * 2,
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.base,
     paddingHorizontal: SIZES.large,
     marginBottom: 4,
-    ...SHADOWS.light,
+    boxShadow: '0px 2px 3px rgba(0,0,0,0.1)',
   },
   addUserButtonText: {
     color: '#fff',

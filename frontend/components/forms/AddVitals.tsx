@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { COLORS, SIZES, SHADOWS } from '../../../../components/constants/Theme';
+import { COLORS, SIZES, SHADOWS } from '../constants/Theme';
 
 export default function AddVitalsScreen() {
   const { id } = useLocalSearchParams();
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     borderRadius: SIZES.base,
     padding: SIZES.medium,
     fontSize: SIZES.font,
-    ...SHADOWS.light,
+    boxShadow: '0px 2px 3px rgba(0,0,0,0.1)',
   },
   input: {
     backgroundColor: COLORS.white,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     padding: SIZES.medium,
     marginBottom: SIZES.medium,
     fontSize: SIZES.font,
-    ...SHADOWS.light,
+    boxShadow: '0px 2px 3px rgba(0,0,0,0.1)',
   },
   textArea: {
     height: 100,

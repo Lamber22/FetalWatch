@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     padding: SIZES.base,
     borderRadius: SIZES.base + 2,
     marginBottom: SIZES.base + 4,
-    ...SHADOWS.light,
+    boxShadow: '0px 2px 3px rgba(0,0,0,0.1)',
   },
   inputRow: {
     flexDirection: 'row',

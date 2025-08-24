@@ -41,10 +41,7 @@ const styles = StyleSheet.create({
     // minWidth and height are now set dynamically
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0a7ea4',
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    boxShadow: '0px 2px 6px rgba(10,126,164,0.12)',
     elevation: 3,
     marginLeft: 8,
     borderWidth: 1,
