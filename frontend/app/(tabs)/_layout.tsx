@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Dimensions } from 'react-native';
+import { SHADOWS } from '../../components/constants/Theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/components/constants/Colors';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -59,7 +60,13 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   }, [user]);
 
   const handleTabPress = (routeName: string) => {
-    navigation.navigate(routeName);
+    try {
+      navigation.navigate(routeName);
+    } catch (e) {
+      // Show fallback UI or toast
+      console.error('Navigation error:', e);
+      // Optionally, set a state to show error UI
+    }
   };
 
   return (
@@ -118,11 +125,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     justifyContent: 'space-around',
     alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: -2 },
+  ...SHADOWS.dark,
     zIndex: 100,
   },
   tabItem: {

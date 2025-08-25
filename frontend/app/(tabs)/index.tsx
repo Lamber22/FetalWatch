@@ -87,7 +87,14 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={{ flex: 2 }} />
         <View style={styles.titleContainer}>
-          <Image source={require('../../assets/logo/fetalwatch.png')} style={styles.logo} />
+          {(() => {
+            try {
+              return <Image source={require('../../assets/logo/fetalwatch.png')} style={styles.logo} />;
+            } catch (e) {
+              console.error('Logo asset missing:', e);
+              return <Text style={{ color: 'red' }}>Logo missing</Text>;
+            }
+          })()}
           <Text style={styles.title} numberOfLines={1}>FETALWATCH</Text>
         </View>
         <View style={{ flex: 2 }} />
@@ -117,11 +124,18 @@ export default function HomeScreen() {
             <Ionicons name="notifications-outline" size={iconSize} color={colors.primary} />
           </TouchableOpacity>
         </View>
-        <Image
-          source={require('../../assets/illustration/a_vibrant_2d_illustration_featuring_black_obstetricians_and_healthcare_providers_engaging_with_the__lyacw4geud106dkbw8zq_0.png')}
-          style={[styles.headerIllustration, { height: iconSize * 5 }]}
-          resizeMode="contain"
-        />
+        {(() => {
+          try {
+            return <Image
+              source={require('../../assets/illustration/a_vibrant_2d_illustration_featuring_black_obstetricians_and_healthcare_providers_engaging_with_the__lyacw4geud106dkbw8zq_0.png')}
+              style={[styles.headerIllustration, { height: iconSize * 5 }]}
+              resizeMode="contain"
+            />;
+          } catch (e) {
+            console.error('Illustration asset missing:', e);
+            return <Text style={{ color: 'red' }}>Illustration missing</Text>;
+          }
+        })()}
       </View>
 
       {/* Quick Actions */}
@@ -186,7 +200,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={patient._id}
                 style={[styles.patientCard, { backgroundColor: colors.white, padding }]}
-                onPress={() => router.push(`/(tabs)/Patients/${patient._id}`)}
+                onPress={() => router.push(`/(tabs)/Patients`)}
               >
                 <View style={styles.patientInfo}>
                   <Text style={[styles.patientName, { color: colors.text, fontSize: patientNameFont }]}>
@@ -289,7 +303,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    ...SHADOWS.light,
+  ...SHADOWS.light, // Updated to use boxShadow for web and shadow* for native
   },
   headerIllustration: {
     width: '100%',
@@ -308,7 +322,7 @@ const styles = StyleSheet.create({
     padding: SIZES.padding,
     borderRadius: SIZES.radius,
     alignItems: 'center',
-    ...SHADOWS.light,
+  ...SHADOWS.light, // Updated to use boxShadow for web and shadow* for native
   },
   actionText: {
     marginTop: SIZES.base,
@@ -325,7 +339,7 @@ const styles = StyleSheet.create({
     width: '48%',
     padding: SIZES.padding,
     borderRadius: SIZES.radius,
-    ...SHADOWS.light,
+  ...SHADOWS.light, // Updated to use boxShadow for web and shadow* for native
   },
   statValue: {
     fontSize: SIZES.large,
@@ -360,7 +374,7 @@ const styles = StyleSheet.create({
     padding: SIZES.padding,
     borderRadius: SIZES.radius,
     marginBottom: SIZES.base,
-    ...SHADOWS.light,
+  ...SHADOWS.light, // Updated to use boxShadow for web and shadow* for native
   },
   patientInfo: {
     flex: 1,

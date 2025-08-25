@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SHADOWS } from '../../components/constants/Theme';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { router } from 'expo-router';
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 8,
     backgroundColor: '#fff',
-    elevation: 2,
+  ...SHADOWS.light,
   },
   logoutText: {
     marginLeft: 12,

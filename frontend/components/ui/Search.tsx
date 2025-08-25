@@ -47,7 +47,7 @@ export default function SearchFilterBar({
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, shadowColor: colors.text }]}> 
+  <View style={[styles.container, { backgroundColor: colors.background, ...SHADOWS.light }]}>
       <View style={styles.inputRow}>
         <View style={[styles.searchBox, { backgroundColor: colors.white, borderColor: colors.gray }]}> 
           <Ionicons name="search" size={18} color={colors.gray} style={{ marginRight: SIZES.base - 2 }} />

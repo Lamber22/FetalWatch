@@ -10,33 +10,50 @@ const Tab = createMaterialTopTabNavigator();
 export default function PatientsTabsScreen() {
   const { colors } = useTheme();
 
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={styles.header}>
-        <View style={{ flex: 2 }} />
-        <View style={styles.titleContainer}>
-          <Image source={require('../../assets/logo/fetalwatch.png')} style={styles.logo} />
-          <Text style={styles.title} numberOfLines={1}>Patients & Appointments</Text>
+  try {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={styles.header}>
+          <View style={{ flex: 2 }} />
+          <View style={styles.titleContainer}>
+            {(() => {
+              try {
+                return <Image source={require('../../assets/logo/fetalwatch.png')} style={styles.logo} />;
+              } catch (e) {
+                console.error('Logo asset missing:', e);
+                return <Text style={{ color: 'red' }}>Logo missing</Text>;
+              }
+            })()}
+            <Text style={styles.title} numberOfLines={1}>Patients & Appointments</Text>
+          </View>
+          <View style={{ flex: 2 }} />
         </View>
-        <View style={{ flex: 2 }} />
+        <View style={styles.navigationHint}>
+          <Text style={[styles.hintText, { color: colors.gray }]}>
+            Tap on "Patients" or "Appointments" tabs below to switch between views
+          </Text>
+        </View>
+        <Tab.Navigator
+          screenOptions={{
+            tabBarLabelStyle: { fontWeight: 'bold', color: colors.primary },
+            tabBarIndicatorStyle: { backgroundColor: colors.primary },
+            tabBarStyle: { backgroundColor: colors.background },
+          }}
+        >
+          <Tab.Screen name="Patients" component={PatientsListTab} />
+          <Tab.Screen name="Appointments" component={AppointmentsTab} />
+        </Tab.Navigator>
       </View>
-      <View style={styles.navigationHint}>
-        <Text style={[styles.hintText, { color: colors.gray }]}>
-          Tap on "Patients" or "Appointments" tabs below to switch between views
-        </Text>
+    );
+  } catch (error) {
+    console.error('Patients tab crashed:', error);
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <Text style={{ color: 'red', fontSize: 18, fontWeight: 'bold' }}>Failed to load Patients tab.</Text>
+        <Text style={{ marginTop: 8 }}>{String(error)}</Text>
       </View>
-      <Tab.Navigator
-        screenOptions={{
-          tabBarLabelStyle: { fontWeight: 'bold', color: colors.primary },
-          tabBarIndicatorStyle: { backgroundColor: colors.primary },
-          tabBarStyle: { backgroundColor: colors.background },
-        }}
-      >
-        <Tab.Screen name="Patients" component={PatientsListTab} />
-        <Tab.Screen name="Appointments" component={AppointmentsTab} />
-      </Tab.Navigator>
-    </View>
-  );
+    );
+  }
 }
 
 const styles = StyleSheet.create({

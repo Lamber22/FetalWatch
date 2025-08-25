@@ -225,11 +225,7 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.base + 2,
     fontSize: SIZES.medium,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+  ...SHADOWS.light,
   },
   filterScroll: {
     maxHeight: 44,

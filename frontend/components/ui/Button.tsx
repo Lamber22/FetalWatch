@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, Dimensions } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { SHADOWS } from '../../components/constants/Theme';
 
 interface ButtonProps {
   title: string;
@@ -42,7 +43,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     boxShadow: '0px 2px 6px rgba(10,126,164,0.12)',
-    elevation: 3,
+  ...SHADOWS.light,
     marginLeft: 8,
     borderWidth: 1,
   },

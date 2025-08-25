@@ -1,5 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { authService } from '../services/AuthService';
+import { apiService } from '../services/API';
 import { User } from '../interface/iUser';
 
 interface AuthContextType {
@@ -37,7 +39,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('AuthContext: Attempting sign in');
       const response = await authService.signIn({ email, password });
       console.log('AuthContext: Sign in response:', response);
-      
+
+      // Save tokens for persistence
+      if (response.token) {
+        await apiService.setToken(response.token);
+      }
+      if (response.refreshToken) {
+        await apiService.setRefreshToken(response.refreshToken);
+      }
+
       if (response.data?.user) {
         console.log('AuthContext: Setting user from response:', response.data.user);
         const userData = {
@@ -92,17 +102,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setLoading(true);
       setError(null);
-      console.log('AuthContext: Attempting sign up with role:', role);
       const response = await authService.signUp({ facilityName, facilityAddress, facilityPhone, facilityType, facilityLicenseNumber, email, password, role, otp });
       console.log('AuthContext: Sign up response:', response);
-      
-      // Don't automatically sign in the user after registration
-      // They should be redirected to login screen to sign in manually
-      
+      // You may want to auto-login after sign up, e.g.:
+      // if (response.token && response.data?.user) {
+      //   await login(response.data.user, response.token);
+      // }
     } catch (err: any) {
-      console.error('AuthContext: Sign up error:', err);
       setError(err.message || 'Sign up failed');
-      throw err;
     } finally {
       setLoading(false);
     }

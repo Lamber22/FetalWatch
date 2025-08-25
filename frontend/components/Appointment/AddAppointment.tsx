@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
     maxHeight: 200,
     zIndex: 1000,
     ...SHADOWS.medium,
-    elevation: 5,
+  ...SHADOWS.medium,
   },
   dropdownList: {
     maxHeight: 180,

@@ -1,4 +1,5 @@
 import { Dimensions } from 'react-native';
+import { Platform } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -87,35 +88,40 @@ export const FONTS = {
   bold: 'System-Bold',
 };
 
+
+
 export const SHADOWS = {
-  light: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  medium: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  dark: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
+  light: Platform.OS === 'web'
+    ? {
+        boxShadow: '0px 2px 3px rgba(0,0,0,0.1)',
+      }
+    : {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+      },
+  medium: Platform.OS === 'web'
+    ? {
+        boxShadow: '0px 4px 6px rgba(0,0,0,0.2)',
+      }
+    : {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 5,
+      },
+  dark: Platform.OS === 'web'
+    ? {
+        boxShadow: '0px 6px 8px rgba(0,0,0,0.3)',
+      }
+    : {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
+      },
 };
